@@ -1,0 +1,295 @@
+package coffee.view;
+
+import coffee.controller.DieuKhienUngDung;
+import coffee.controller.PhienUngDung;
+import coffee.controller.screens.DieuKhienNhanVien;
+import coffee.controller.screens.DieuKhienHoaDon;
+import coffee.controller.screens.DieuKhienDanhSachHoaDon;
+import coffee.controller.screens.DieuKhienDangNhap;
+import coffee.controller.screens.DieuKhienSanPham;
+import coffee.controller.screens.DieuKhienThongKe;
+import coffee.controller.screens.DieuKhienBan;
+import coffee.dao.KhoiTaoCoSoDuLieu;
+import coffee.dao.NhanVienRepository;
+import coffee.dao.HoaDonRepository;
+import coffee.dao.SanPhamRepository;
+import coffee.dao.BanRepository;
+import coffee.model.NhanVien;
+import coffee.service.DichVuCafe;
+import coffee.util.ModernButton;
+import coffee.util.ModernUITheme;
+import coffee.view.screens.ManHinhNhanVien;
+import coffee.view.screens.ManHinhHoaDon;
+import coffee.view.screens.ManHinhDanhSachHoaDon;
+import coffee.view.screens.ManHinhDangNhap;
+import coffee.view.screens.ManHinhSanPham;
+import coffee.view.screens.ManHinhThongKe;
+import coffee.view.screens.ManHinhBan;
+
+import javax.swing.*;
+import java.awt.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class UngDungQuanLyCafe extends JFrame {
+    private final CardLayout cardLayout = new CardLayout();
+    private final JPanel rootPanel = new JPanel(cardLayout);
+    private final CardLayout contentLayout = new CardLayout();
+    private final JPanel contentPanel = new JPanel(contentLayout);
+
+    private final JLabel currentScreenLabel = new JLabel("Tổng quan");
+    private final JLabel currentUserLabel = new JLabel("Chưa đăng nhập");
+    private final JLabel appTitleLabel = new JLabel("QL Coffee");
+    private final JLabel dateTimeLabel = new JLabel();
+    private final JButton sanPhamButton = new ModernButton("Sản phẩm", ModernUITheme.PRIMARY_COLOR, Color.WHITE);
+    private final JButton banButton = new ModernButton("Bàn", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
+    private final JButton thanhToanButton = new ModernButton("Thanh toán", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
+    private final JButton hoaDonButton = new ModernButton("Hóa đơn", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
+    private final JButton nhanVienButton = new ModernButton("Nhân viên", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
+    private final JButton thongKeButton = new ModernButton("Thống kê", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
+    private final JButton dangXuatButton = new ModernButton("Đăng xuất", ModernUITheme.DANGER_COLOR, Color.WHITE);
+    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    private final Timer clockTimer = new Timer(1000, e -> updateClock());
+
+    private final DieuKhienUngDung controller;
+    private final PhienUngDung session = new PhienUngDung();
+
+    private final ManHinhDangNhap loginView = new ManHinhDangNhap();
+    private final ManHinhSanPham productView = new ManHinhSanPham();
+    private final ManHinhBan tableView = new ManHinhBan();
+    private final ManHinhNhanVien employeeView = new ManHinhNhanVien();
+    private final ManHinhHoaDon paymentView = new ManHinhHoaDon();
+    private final ManHinhDanhSachHoaDon invoiceView = new ManHinhDanhSachHoaDon();
+    private final ManHinhThongKe reportView = new ManHinhThongKe();
+
+    private final DieuKhienSanPham productController;
+    private final DieuKhienBan tableController;
+    private final DieuKhienNhanVien employeeController;
+    private final DieuKhienHoaDon paymentController;
+    private final DieuKhienDanhSachHoaDon invoiceController;
+    private final DieuKhienThongKe reportController;
+
+    public UngDungQuanLyCafe() {
+        applyModernTheme();
+        
+        KhoiTaoCoSoDuLieu.initialize();
+        this.controller = new DieuKhienUngDung(new DichVuCafe(
+                new SanPhamRepository(),
+                new BanRepository(),
+                new NhanVienRepository(),
+                new HoaDonRepository()
+        ));
+        this.productController = new DieuKhienSanPham(controller, productView);
+        this.tableController = new DieuKhienBan(controller, session, tableView);
+        this.employeeController = new DieuKhienNhanVien(controller, session, employeeView);
+        this.reportController = new DieuKhienThongKe(controller, reportView);
+        this.paymentController = new DieuKhienHoaDon(controller, session, paymentView, this::refreshAll);
+        this.invoiceController = new DieuKhienDanhSachHoaDon(controller, invoiceView);
+        new DieuKhienDangNhap(controller, session, loginView, this::onLoginSuccess);
+        initUI();
+        refreshAll();
+    }
+
+    private void applyModernTheme() {
+        UIManager.put("Panel.background", ModernUITheme.BG_PRIMARY);
+        UIManager.put("Panel.foreground", ModernUITheme.TEXT_PRIMARY);
+        UIManager.put("Label.foreground", ModernUITheme.TEXT_PRIMARY);
+        UIManager.put("TabbedPane.foreground", ModernUITheme.TEXT_PRIMARY);
+        UIManager.put("TabbedPane.background", ModernUITheme.BG_PRIMARY);
+        UIManager.put("TabbedPane.contentAreaColor", ModernUITheme.BG_PRIMARY);
+        UIManager.put("OptionPane.background", ModernUITheme.BG_PRIMARY);
+        UIManager.put("OptionPane.messageForeground", ModernUITheme.TEXT_PRIMARY);
+        UIManager.put("Table.background", ModernUITheme.BG_PRIMARY);
+        UIManager.put("Table.foreground", ModernUITheme.TEXT_PRIMARY);
+        UIManager.put("Button.foreground", ModernUITheme.TEXT_PRIMARY);
+    }
+
+    private void initUI() {
+        setTitle("☕ Coffee Management - MVC Swing");
+        setSize(1000, 700);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        
+        // Set frame colors
+        setBackground(ModernUITheme.BG_PRIMARY);
+        rootPanel.setBackground(ModernUITheme.BG_PRIMARY);
+
+        rootPanel.add(loginView, "LOGIN");
+        rootPanel.add(createDashboardPanel(), "DASHBOARD");
+        add(rootPanel);
+        cardLayout.show(rootPanel, "LOGIN");
+    }
+
+    private JPanel createDashboardPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(ModernUITheme.BG_PRIMARY);
+
+        panel.add(createHeaderPanel(), BorderLayout.NORTH);
+        panel.add(createMainWorkspace(), BorderLayout.CENTER);
+        panel.add(createStatusBar(), BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private JPanel createHeaderPanel() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(ModernUITheme.BG_PRIMARY);
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ModernUITheme.BORDER_COLOR));
+
+        appTitleLabel.setFont(ModernUITheme.FONT_HEADING);
+        appTitleLabel.setForeground(ModernUITheme.PRIMARY_DARK);
+
+        dateTimeLabel.setFont(ModernUITheme.FONT_BODY);
+        dateTimeLabel.setForeground(ModernUITheme.TEXT_SECONDARY);
+        dateTimeLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        left.setOpaque(false);
+        left.add(appTitleLabel);
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        right.setOpaque(false);
+        right.add(dateTimeLabel);
+
+        header.add(left, BorderLayout.WEST);
+        header.add(right, BorderLayout.EAST);
+        updateClock();
+        clockTimer.start();
+        return header;
+    }
+
+    private JPanel createMainWorkspace() {
+        JPanel workspace = new JPanel(new BorderLayout(ModernUITheme.PADDING_LG, 0));
+        workspace.setBackground(ModernUITheme.BG_PRIMARY);
+        workspace.setBorder(BorderFactory.createEmptyBorder(ModernUITheme.PADDING_LG, ModernUITheme.PADDING_LG,
+                ModernUITheme.PADDING_LG, ModernUITheme.PADDING_LG));
+
+        JPanel sidebar = createSidebar();
+        workspace.add(sidebar, BorderLayout.WEST);
+
+        contentPanel.setBackground(ModernUITheme.BG_PRIMARY);
+        contentPanel.add(productView, "SAN_PHAM");
+        contentPanel.add(tableView, "BAN");
+        contentPanel.add(paymentView, "THANH_TOAN");
+        contentPanel.add(invoiceView, "HOA_DON");
+        contentPanel.add(employeeView, "NHAN_VIEN");
+        contentPanel.add(reportView, "THONG_KE");
+
+        workspace.add(contentPanel, BorderLayout.CENTER);
+        return workspace;
+    }
+
+    private JPanel createSidebar() {
+        JPanel sidebar = new JPanel();
+        sidebar.setBackground(ModernUITheme.BG_SECONDARY);
+        sidebar.setBorder(BorderFactory.createEmptyBorder(ModernUITheme.PADDING_LG, ModernUITheme.PADDING_LG,
+                ModernUITheme.PADDING_LG, ModernUITheme.PADDING_LG));
+        sidebar.setLayout(new GridLayout(0, 1, ModernUITheme.PADDING_MD, ModernUITheme.PADDING_MD));
+        sidebar.setPreferredSize(new Dimension(210, 0));
+
+        styleNavButton(sanPhamButton);
+        styleNavButton(banButton);
+        styleNavButton(thanhToanButton);
+        styleNavButton(hoaDonButton);
+        styleNavButton(nhanVienButton);
+        styleNavButton(thongKeButton);
+
+        sanPhamButton.addActionListener(e -> showScreen("Sản phẩm", "SAN_PHAM", sanPhamButton));
+        banButton.addActionListener(e -> showScreen("Bàn", "BAN", banButton));
+        thanhToanButton.addActionListener(e -> showScreen("Thanh toán", "THANH_TOAN", thanhToanButton));
+        hoaDonButton.addActionListener(e -> showScreen("Hóa đơn", "HOA_DON", hoaDonButton));
+        nhanVienButton.addActionListener(e -> showScreen("Nhân viên", "NHAN_VIEN", nhanVienButton));
+        thongKeButton.addActionListener(e -> showScreen("Thống kê", "THONG_KE", thongKeButton));
+        dangXuatButton.addActionListener(e -> logout());
+
+        sidebar.add(sanPhamButton);
+        sidebar.add(banButton);
+        sidebar.add(thanhToanButton);
+        sidebar.add(hoaDonButton);
+        sidebar.add(nhanVienButton);
+        sidebar.add(thongKeButton);
+        sidebar.add(Box.createVerticalStrut(10));
+        sidebar.add(dangXuatButton);
+        return sidebar;
+    }
+
+    private JPanel createStatusBar() {
+        JPanel statusBar = new JPanel(new BorderLayout());
+        statusBar.setBackground(ModernUITheme.BG_PRIMARY);
+        statusBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, ModernUITheme.BORDER_COLOR));
+
+        JLabel statusLabel = new JLabel("Sẵn sàng");
+        statusLabel.setForeground(ModernUITheme.TEXT_TERTIARY);
+        statusLabel.setFont(ModernUITheme.FONT_SMALL);
+
+        currentUserLabel.setForeground(ModernUITheme.TEXT_TERTIARY);
+        currentUserLabel.setFont(ModernUITheme.FONT_SMALL);
+
+        statusBar.add(statusLabel, BorderLayout.WEST);
+        statusBar.add(currentUserLabel, BorderLayout.EAST);
+
+        return statusBar;
+    }
+
+    private void styleNavButton(JButton button) {
+        button.setPreferredSize(new Dimension(180, 42));
+    }
+
+    private void showScreen(String title, String cardKey, JButton activeButton) {
+        currentScreenLabel.setText(title);
+        contentLayout.show(contentPanel, cardKey);
+        setActiveNav(activeButton);
+    }
+
+    private void setActiveNav(JButton activeButton) {
+        JButton[] buttons = {sanPhamButton, banButton, thanhToanButton, hoaDonButton, nhanVienButton, thongKeButton};
+        for (JButton button : buttons) {
+            Color targetColor = button == activeButton ? ModernUITheme.PRIMARY_COLOR : ModernUITheme.BG_TERTIARY;
+            if (button instanceof ModernButton modernButton) {
+                modernButton.setBaseColor(targetColor);
+            } else {
+                button.setBackground(targetColor);
+            }
+            if (button == activeButton) {
+                button.setForeground(ModernUITheme.TEXT_PRIMARY);
+            }
+        }
+    }
+
+    private void logout() {
+        session.setCurrentUser(null);
+        currentUserLabel.setText("Chưa đăng nhập");
+        cardLayout.show(rootPanel, "LOGIN");
+    }
+
+    private void showDefaultScreenForUser() {
+        if (session.getCurrentUser() != null && session.getCurrentUser().getVaiTro() == coffee.model.VaiTro.ADMIN) {
+            nhanVienButton.setEnabled(true);
+        } else {
+            nhanVienButton.setEnabled(false);
+        }
+        showScreen("Thống kê", "THONG_KE", thongKeButton);
+    }
+
+    private void refreshAll() {
+        productController.refresh();
+        tableController.refresh();
+        employeeController.refresh();
+        paymentController.refresh();
+        invoiceController.refresh();
+        reportController.refresh();
+    }
+
+    private void onLoginSuccess() {
+        NhanVien user = session.getCurrentUser();
+        setTitle("Coffee Management - " + user.getHoTen() + " (" + user.getVaiTro() + ")");
+        currentUserLabel.setText("Xin chào, " + user.getHoTen() + " • " + user.getVaiTro());
+        showDefaultScreenForUser();
+        cardLayout.show(rootPanel, "DASHBOARD");
+        refreshAll();
+    }
+
+    private void updateClock() {
+        dateTimeLabel.setText(java.time.LocalDateTime.now().format(dateTimeFormatter));
+    }
+}
