@@ -60,12 +60,25 @@ public class ModernButton extends JButton {
         g2d.setColor(currentColor);
         g2d.fillRoundRect(0, 0, getWidth(), getHeight(), borderRadius, borderRadius);
 
-        // Draw text
+        // Draw text and icon
         g2d.setColor(textColor);
         g2d.setFont(getFont());
         FontMetrics fm = g2d.getFontMetrics();
-        int x = (getWidth() - fm.stringWidth(getText())) / 2;
+        Icon icon = getIcon();
+        int iconW = icon == null ? 0 : icon.getIconWidth();
+        int iconH = icon == null ? 0 : icon.getIconHeight();
+        int gap = icon == null ? 0 : Math.max(0, getIconTextGap());
+        int textW = fm.stringWidth(getText());
+        int totalW = iconW + gap + textW;
+
+        int x = (getWidth() - totalW) / 2;
         int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+
+        if (icon != null) {
+            int iconY = (getHeight() - iconH) / 2;
+            icon.paintIcon(this, g2d, x, iconY);
+            x += iconW + gap;
+        }
         g2d.drawString(getText(), x, y);
     }
 

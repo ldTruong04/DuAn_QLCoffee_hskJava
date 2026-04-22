@@ -4,11 +4,17 @@ import coffee.controller.DieuKhienUngDung;
 import coffee.controller.PhienUngDung;
 import coffee.model.BanCafe;
 import coffee.model.HoaDon;
+import coffee.model.KhuyenMai;
 import coffee.model.NhanVien;
 import coffee.model.SanPham;
 import coffee.view.screens.ManHinhHoaDon;
 
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 public class DieuKhienHoaDon {
@@ -33,6 +39,13 @@ public class DieuKhienHoaDon {
         view.bindStoreProductSelection();
         view.bindInvoiceTypeChange(this::onContextChanged);
         view.bindTableChange(this::onContextChanged);
+        view.bindCashInputChange(this::capNhatTienThoiTamTinh);
+        view.bindPromotionSelection(this::onPromotionSelected);
+        view.bindApplyPromotion(this::apDungKhuyenMaiTuNhapTay);
+        view.bindClearPromotion(this::boKhuyenMai);
+
+        view.quickExactButton.addActionListener(e -> setQuickCashByOffset(0));
+        view.refreshButton.addActionListener(e -> refresh());
 
         view.addProductButton.addActionListener(e -> runAction(() -> {
             SanPham product = view.getSelectedStoreProduct();
@@ -54,38 +67,61 @@ public class DieuKhienHoaDon {
             onDataChanged.run();
         }));
 
-        view.increaseItemButton.addActionListener(e -> runAction(() -> {
-            ensureCurrentInvoice();
-            var item = view.getSelectedInvoiceItem();
-            if (item == null) {
-                throw new IllegalArgumentException("Vui lòng chọn món đã gọi");
+        view.invoiceItemTableModel.addTableModelListener(e -> {
+            if (e.getType() != TableModelEvent.UPDATE || e.getColumn() != 1) {
+                return;
             }
-            int newQuantity = item.getSoLuong() + 1;
-            appController.updateInvoiceItemQuantity(currentInvoiceId, item.getSanPham().getMa(), newQuantity);
-            onDataChanged.run();
-        }));
+            runAction(() -> {
+                applyQuantityEditFromCell(e.getFirstRow());
+                onDataChanged.run();
+            });
+        });
 
-        view.decreaseItemButton.addActionListener(e -> runAction(() -> {
-            ensureCurrentInvoice();
-            var item = view.getSelectedInvoiceItem();
-            if (item == null) {
-                throw new IllegalArgumentException("Vui lòng chọn món đã gọi");
-            }
-            int newQuantity = item.getSoLuong() - 1;
-            if (newQuantity <= 0) {
-                appController.removeInvoiceItem(currentInvoiceId, item.getSanPham().getMa());
-            } else {
-                appController.updateInvoiceItemQuantity(currentInvoiceId, item.getSanPham().getMa(), newQuantity);
-            }
-            onDataChanged.run();
-        }));
-
-        view.payButton.addActionListener(e -> runAction(() -> {
+        view.payCashButton.addActionListener(e -> runAction(() -> {
             if (currentInvoiceId == null) {
                 throw new IllegalStateException("Chưa có hóa đơn để thanh toán");
             }
-            double total = appController.payInvoice(currentInvoiceId);
-            JOptionPane.showMessageDialog(view, "Thanh toán thành công: " + String.format("%.0f", total) + " VND");
+            long tongTien = view.getTongTienCanThu();
+            long tienKhachDua = view.getTienKhachDua();
+            if (tienKhachDua < tongTien) {
+                view.capNhatTienThoi(0, false);
+                throw new IllegalStateException("Tiền khách đưa chưa đủ để thanh toán");
+            }
+            long tienThoi = tienKhachDua - tongTien;
+            if (!xacNhanThanhToan("tiền mặt", tongTien, tienKhachDua, tienThoi)) {
+                return;
+            }
+            view.capNhatTienThoi(tienKhachDua - tongTien, true);
+            int invoiceIdToExport = currentInvoiceId;
+            String invoiceText = appController.getInvoiceDetailText(invoiceIdToExport);
+            saveInvoicePromotion(currentInvoiceId);
+            appController.payInvoice(currentInvoiceId, "TIEN_MAT");
+            String exportPath = xuatHoaDonNeuCan(invoiceIdToExport, invoiceText, "TIEN_MAT", tongTien, tienKhachDua, tienThoi);
+            JOptionPane.showMessageDialog(view, "Thanh toán thành công: " + String.format("%,.0f", (double) tongTien) + " VND");
+            if (exportPath != null) {
+                JOptionPane.showMessageDialog(view, "Đã xuất hóa đơn: " + exportPath);
+            }
+            onDataChanged.run();
+        }));
+
+        view.payTransferButton.addActionListener(e -> runAction(() -> {
+            if (currentInvoiceId == null) {
+                throw new IllegalStateException("Chưa có hóa đơn để thanh toán");
+            }
+            long tongTien = view.getTongTienCanThu();
+            if (!xacNhanThanhToan("chuyển khoản", tongTien, 0, 0)) {
+                return;
+            }
+            view.capNhatTienThoi(0, true);
+            int invoiceIdToExport = currentInvoiceId;
+            String invoiceText = appController.getInvoiceDetailText(invoiceIdToExport);
+            saveInvoicePromotion(currentInvoiceId);
+            appController.payInvoice(currentInvoiceId, "CHUYEN_KHOAN");
+            String exportPath = xuatHoaDonNeuCan(invoiceIdToExport, invoiceText, "CHUYEN_KHOAN", tongTien, tongTien, 0);
+            JOptionPane.showMessageDialog(view, "Thanh toán chuyển khoản thành công: " + String.format("%,.0f", (double) tongTien) + " VND");
+            if (exportPath != null) {
+                JOptionPane.showMessageDialog(view, "Đã xuất hóa đơn: " + exportPath);
+            }
             onDataChanged.run();
         }));
 
@@ -128,6 +164,7 @@ public class DieuKhienHoaDon {
 
             view.setTables(dineInTables, selectedForCombo);
             view.setStoreProducts(appController.getProducts());
+            view.setAvailablePromotions(appController.getPromotions());
             view.selectFirstProductIfNeeded();
         } finally {
             updatingView = false;
@@ -157,8 +194,10 @@ public class DieuKhienHoaDon {
 
         currentInvoiceId = openInvoice == null ? null : openInvoice.getMa();
         view.setInvoiceItems(openInvoice == null ? List.of() : openInvoice.getDanhSachMon(), currentInvoiceId);
+        view.boKhuyenMai();
         view.setTableSelectionEnabled(!view.isTakeawaySelected());
         view.setActionButtonsEnabled(view.isTakeawaySelected() || tableId != null);
+        capNhatTienThoiTamTinh();
     }
 
     private Integer resolveContextTableId(boolean createTakeawayIfMissing) {
@@ -211,6 +250,40 @@ public class DieuKhienHoaDon {
         }
     }
 
+    private void applyQuantityEditFromCell(int row) {
+        ensureCurrentInvoice();
+        var item = view.getInvoiceItemAtRow(row);
+        if (item == null) {
+            return;
+        }
+
+        Object editedValue = view.invoiceItemTableModel.getValueAt(row, 1);
+        int targetQuantity = parseEditedQuantity(editedValue, item.getSoLuong());
+        int productId = item.getSanPham().getMa();
+
+        if (targetQuantity <= 0) {
+            appController.removeInvoiceItem(currentInvoiceId, productId);
+        } else {
+            appController.updateInvoiceItemQuantity(currentInvoiceId, productId, targetQuantity);
+        }
+    }
+
+    private int parseEditedQuantity(Object editedValue, int currentQuantity) {
+        if (editedValue == null) {
+            throw new IllegalArgumentException("Số lượng không hợp lệ");
+        }
+        String text = editedValue.toString().trim();
+        if (text.isEmpty()) {
+            throw new IllegalArgumentException("Số lượng không hợp lệ");
+        }
+
+        if (text.startsWith("+") || text.startsWith("-")) {
+            int delta = Integer.parseInt(text);
+            return currentQuantity + delta;
+        }
+        return Integer.parseInt(text);
+    }
+
     private void runAction(Runnable action) {
         try {
             action.run();
@@ -218,5 +291,153 @@ public class DieuKhienHoaDon {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(view, ex.getMessage());
         }
+    }
+
+    private void setQuickCashByOffset(long offset) {
+        long tongTien = view.getTongTienCanThu();
+        if (tongTien <= 0) {
+            return;
+        }
+        view.setTienKhachDua(tongTien + Math.max(0, offset));
+        capNhatTienThoiTamTinh();
+    }
+
+    private void capNhatTienThoiTamTinh() {
+        long tongTien = view.getTongTienCanThu();
+        if (tongTien <= 0) {
+            view.capNhatTienThoi(0, true);
+            return;
+        }
+        long tienKhachDua = view.getTienKhachDua();
+        if (tienKhachDua < tongTien) {
+            view.capNhatTienThoi(0, false);
+        } else {
+            view.capNhatTienThoi(tienKhachDua - tongTien, true);
+        }
+    }
+
+    private void onPromotionSelected() {
+        if (updatingView) {
+            return;
+        }
+        KhuyenMai selected = view.getSelectedPromotion();
+        if (selected == null) {
+            return;
+        }
+        view.setPromotionCodeInput(selected.getMaCode());
+        apDungKhuyenMai(selected);
+    }
+
+    private void apDungKhuyenMaiTuNhapTay() {
+        String code = view.getPromotionCodeInput();
+        if (code == null || code.isBlank()) {
+            throw new IllegalArgumentException("Vui lòng nhập mã khuyến mãi hoặc chọn trong danh sách");
+        }
+        KhuyenMai km = view.findPromotionByCode(code);
+        if (km == null) {
+            throw new IllegalArgumentException("Mã khuyến mãi không hợp lệ hoặc đã tạm dừng");
+        }
+        apDungKhuyenMai(km);
+    }
+
+    private void apDungKhuyenMai(KhuyenMai km) {
+        long tongTien = view.getTongTienHienTai();
+        if (tongTien <= 0) {
+            throw new IllegalStateException("Chưa có món trong hóa đơn để áp dụng khuyến mãi");
+        }
+        long discount = Math.round(km.tinhSoTienGiam(tongTien));
+        view.apDungKhuyenMai(km, discount);
+        capNhatTienThoiTamTinh();
+    }
+
+    private void boKhuyenMai() {
+        view.boKhuyenMai();
+        capNhatTienThoiTamTinh();
+    }
+
+    private boolean xacNhanThanhToan(String phuongThuc, long tongTien, long tienKhachDua, long tienThoi) {
+        StringBuilder message = new StringBuilder();
+        message.append("Xác nhận thanh toán bằng ").append(phuongThuc).append("?\n")
+                .append("Tổng thanh toán: ").append(String.format("%,.0f", (double) tongTien)).append(" VND\n");
+        if ("tiền mặt".equals(phuongThuc)) {
+            message.append("Khách đưa: ").append(String.format("%,.0f", (double) tienKhachDua)).append(" VND\n")
+                    .append("Tiền thối: ").append(String.format("%,.0f", (double) tienThoi)).append(" VND\n");
+        }
+        if (view.isExportInvoiceSelected()) {
+            message.append("Hệ thống sẽ xuất hóa đơn ra Desktop (.fdf).\n");
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(
+                view,
+                message.toString(),
+                "Xác nhận thanh toán",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+        return confirm == JOptionPane.YES_OPTION;
+    }
+
+    private String xuatHoaDonNeuCan(int invoiceId,
+                                    String invoiceText,
+                                    String paymentMethod,
+                                    long tongTien,
+                                    long tienKhachDua,
+                                    long tienThoi) {
+        if (!view.isExportInvoiceSelected()) {
+            return null;
+        }
+        try {
+            Path desktopPath = Path.of(System.getProperty("user.home"), "Desktop");
+            String fileName = "hoa_don_" + invoiceId + "_" + System.currentTimeMillis() + ".fdf";
+            Path outputPath = desktopPath.resolve(fileName);
+
+            String fdfContent = "%FDF-1.2\n"
+                    + "1 0 obj\n<<\n/FDF << /Fields [\n"
+                    + "<< /T (invoice_id) /V (" + invoiceId + ") >>\n"
+                    + "<< /T (payment_method) /V (" + paymentMethod + ") >>\n"
+                    + "<< /T (total_paid) /V (" + tongTien + ") >>\n"
+                    + "<< /T (cash_received) /V (" + tienKhachDua + ") >>\n"
+                    + "<< /T (cash_change) /V (" + tienThoi + ") >>\n"
+                    + "<< /T (invoice_detail) /V (" + escapeFdfValue(invoiceText) + ") >>\n"
+                    + "] >>\n>>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n";
+
+            Files.writeString(outputPath, fdfContent, StandardCharsets.UTF_8);
+            return outputPath.toString();
+        } catch (IOException ex) {
+            throw new RuntimeException("Không thể xuất hóa đơn .fdf ra Desktop", ex);
+        }
+    }
+
+    private String escapeFdfValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace("\\", "\\\\")
+                .replace("(", "\\(")
+                .replace(")", "\\)")
+                .replace("\n", "\\n");
+    }
+
+    private void saveInvoicePromotion(int invoiceId) {
+        HoaDon invoice = appController.getInvoices().stream()
+                .filter(item -> item.getMa() == invoiceId)
+                .findFirst()
+                .orElse(null);
+        if (invoice == null) {
+            return;
+        }
+        KhuyenMai km = view.getKhuyenMaiDangApDung();
+        String promoCode = (km != null) ? km.getMaCode() : null;
+        long discountAmount = view.getGiamGiaHienTai();
+
+        // Update in database
+        appController.updateInvoicePromotionAndDiscount(invoiceId, promoCode, discountAmount);
+
+        // Update in memory model
+        if (km != null) {
+            invoice.setMaKhuyenMai(promoCode);
+        }
+        invoice.setGiamGia(discountAmount);
     }
 }

@@ -35,6 +35,7 @@ public class DieuKhienDanhSachHoaDon {
                     "Khách lẻ",
                     invoice.getNhanVien().getHoTen(),
                     String.format("%.0f", invoice.getTongTien()),
+                    String.format("%d", invoice.getTongThanhToan()),
                     invoice.getThoiGianTao().format(formatter),
                     invoice.getBan().getTen()
             });
@@ -51,6 +52,7 @@ public class DieuKhienDanhSachHoaDon {
         view.detailTableModel.setRowCount(0);
         Integer invoiceId = getSelectedInvoiceId();
         if (invoiceId == null) {
+            clearSummary();
             return;
         }
 
@@ -59,6 +61,7 @@ public class DieuKhienDanhSachHoaDon {
                 .findFirst()
                 .orElse(null);
         if (invoice == null) {
+            clearSummary();
             return;
         }
 
@@ -70,6 +73,38 @@ public class DieuKhienDanhSachHoaDon {
                     String.format("%.0f", item.getThanhTien())
             });
         }
+
+        updateSummary(invoice);
+    }
+
+    private void updateSummary(HoaDon invoice) {
+        long subtotal = Math.round(invoice.getTongTien());
+        long discount = invoice.getGiamGia();
+        long total = invoice.getTongThanhToan();
+
+        view.summarySubtotalLabel.setText("Tổng tiền: " + formatMoney(subtotal) + " VND");
+
+        if (discount > 0) {
+            view.summaryDiscountLabel.setText("Giảm giá: " + formatMoney(discount) + " VND");
+        } else {
+            view.summaryDiscountLabel.setText("Giảm giá: 0 VND");
+        }
+
+        view.summaryTotalLabel.setText("Tổng thanh toán: " + formatMoney(total) + " VND");
+    }
+
+    private void clearSummary() {
+        view.summarySubtotalLabel.setText("Tổng tiền: 0 VND");
+        view.summaryDiscountLabel.setText("Giảm giá: 0 VND");
+        view.summaryTotalLabel.setText("Tổng thanh toán: 0 VND");
+    }
+
+    private String formatMoney(long amount) {
+        if (amount == 0) {
+            return "0";
+        }
+        String formatted = String.format("%,d", amount);
+        return formatted.replace(',', '.');
     }
 
     private Integer getSelectedInvoiceId() {

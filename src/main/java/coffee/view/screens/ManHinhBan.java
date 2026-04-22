@@ -18,7 +18,7 @@ public class ManHinhBan extends JPanel {
     public final DefaultTableModel itemTableModel = new DefaultTableModel(new Object[]{"Tên món", "Số lượng", "Thành tiền"}, 0) {
         @Override
         public boolean isCellEditable(int row, int column) {
-            return false;
+            return column == 1;
         }
     };
     public final JTable itemTable = new JTable(itemTableModel);
@@ -36,8 +36,6 @@ public class ManHinhBan extends JPanel {
     public final JLabel selectedStoreProductLabel = new JLabel("Món đã chọn: -");
     public final JTextField quantityField = new ModernTextField(8);
     public final JButton orderButton = new ModernButton("Thêm vào bàn", ModernUITheme.SUCCESS_COLOR, ModernUITheme.TEXT_PRIMARY);
-    public final JButton increaseItemButton = new ModernButton("+", ModernUITheme.INFO_COLOR, ModernUITheme.TEXT_PRIMARY);
-    public final JButton decreaseItemButton = new ModernButton("-", ModernUITheme.DANGER_COLOR, ModernUITheme.TEXT_PRIMARY);
     private List<SanPham> storeProducts = List.of();
     private List<ChiTietHoaDon> currentOrderItems = List.of();
 
@@ -113,17 +111,7 @@ public class ManHinhBan extends JPanel {
         JScrollPane itemScroll = new JScrollPane(itemTable);
         ModernStyler.styleScrollPane(itemScroll);
         detailContent.add(itemScroll, BorderLayout.CENTER);
-
-        JPanel editPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, ModernUITheme.PADDING_SM, 0));
-        editPanel.setBackground(ModernUITheme.BG_PRIMARY);
-        JLabel editLabel = new JLabel("Số lượng");
-        editLabel.setFont(ModernUITheme.FONT_SMALL);
-        editPanel.add(editLabel);
-        increaseItemButton.setPreferredSize(new Dimension(48, 28));
-        decreaseItemButton.setPreferredSize(new Dimension(48, 28));
-        editPanel.add(increaseItemButton);
-        editPanel.add(decreaseItemButton);
-        detailContent.add(editPanel, BorderLayout.SOUTH);
+        QuantityCellEditor.installOn(itemTable, 1);
 
         orderDetailSection.add(detailContent, BorderLayout.CENTER);
 
@@ -248,18 +236,14 @@ public class ManHinhBan extends JPanel {
         }
         totalLabel.setText("Tổng cộng: " + String.format("%.0f", total) + " VND");
         boolean hasItems = !currentOrderItems.isEmpty();
-        increaseItemButton.setEnabled(hasItems);
-        decreaseItemButton.setEnabled(hasItems);
+        itemTable.setEnabled(hasItems);
     }
 
     public void setOrderControlsEnabled(boolean enabled) {
         storeProductTable.setEnabled(enabled);
         quantityField.setEnabled(enabled);
         orderButton.setEnabled(enabled);
-        if (!enabled) {
-            increaseItemButton.setEnabled(false);
-            decreaseItemButton.setEnabled(false);
-        }
+        itemTable.setEnabled(enabled && !currentOrderItems.isEmpty());
     }
 
     public SanPham getSelectedProduct() {
@@ -279,6 +263,13 @@ public class ManHinhBan extends JPanel {
 
     public ChiTietHoaDon getSelectedOrderItem() {
         int row = itemTable.getSelectedRow();
+        if (row < 0 || row >= currentOrderItems.size()) {
+            return null;
+        }
+        return currentOrderItems.get(row);
+    }
+
+    public ChiTietHoaDon getOrderItemAtRow(int row) {
         if (row < 0 || row >= currentOrderItems.size()) {
             return null;
         }

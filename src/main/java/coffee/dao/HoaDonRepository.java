@@ -19,9 +19,9 @@ import java.util.Optional;
 public class HoaDonRepository {
     public HoaDon createInvoice(int tableId, int employeeId) {
         String sql = """
-                INSERT INTO invoice(table_id, employee_id, created_at, paid)
-                VALUES (?, ?, CURRENT_TIMESTAMP, FALSE)
-                RETURNING id, created_at, paid
+                INSERT INTO invoice(table_id, employee_id, created_at, paid, payment_method)
+                VALUES (?, ?, CURRENT_TIMESTAMP, FALSE, NULL)
+                RETURNING id, created_at, paid, payment_method
                 """;
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -31,7 +31,14 @@ public class HoaDonRepository {
                 rs.next();
                 BanCafe table = new BanCafe(tableId, "");
                 NhanVien emp = new NhanVien(employeeId, "", VaiTro.STAFF, "", "");
-                return new HoaDon(rs.getInt("id"), table, emp, rs.getTimestamp("created_at").toLocalDateTime(), rs.getBoolean("paid"));
+                return new HoaDon(
+                        rs.getInt("id"),
+                        table,
+                        emp,
+                        rs.getTimestamp("created_at").toLocalDateTime(),
+                        rs.getBoolean("paid"),
+                        rs.getString("payment_method")
+                );
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -91,10 +98,16 @@ public class HoaDonRepository {
     }
 
     public void markPaid(int invoiceId) {
-        String sql = "UPDATE invoice SET paid=TRUE WHERE id=? AND paid=FALSE";
+        markPaid(invoiceId, "TIEN_MAT");
+    }
+
+    public void markPaid(int invoiceId, String paymentMethod) {
+        String normalizedMethod = normalizePaymentMethod(paymentMethod);
+        String sql = "UPDATE invoice SET paid=TRUE, payment_method=? WHERE id=? AND paid=FALSE";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, invoiceId);
+            ps.setString(1, normalizedMethod);
+            ps.setInt(2, invoiceId);
             if (ps.executeUpdate() == 0) {
                 throw new IllegalStateException("Hóa đơn đã thanh toán hoặc không tồn tại");
             }
@@ -105,9 +118,23 @@ public class HoaDonRepository {
         }
     }
 
+    public void updatePromotionAndDiscount(int invoiceId, String promotionCode, long discountAmount) {
+        String sql = "UPDATE invoice SET promotion_code=?, discount=? WHERE id=?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, promotionCode);
+            ps.setLong(2, discountAmount);
+            ps.setInt(3, invoiceId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public List<HoaDon> findAllDetailed() {
         String sql = """
-                SELECT i.id invoice_id, i.created_at, i.paid,
+                SELECT i.id invoice_id, i.created_at, i.paid, i.payment_method,
+                       i.promotion_code, i.discount,
                        t.id table_id, t.name table_name, t.occupied,
                       e.id employee_id, e.ho_ten employee_name, e.role, e.username, e.password,
                   p.id product_id, p.name product_name, p.category, p.price, p.description, p.image_path,
@@ -144,8 +171,17 @@ public class HoaDonRepository {
                             table,
                             employee,
                             rs.getTimestamp("created_at").toLocalDateTime(),
-                            rs.getBoolean("paid")
+                            rs.getBoolean("paid"),
+                            rs.getString("payment_method")
                     );
+                    String promoCode = rs.getString("promotion_code");
+                    if (promoCode != null) {
+                        current.setMaKhuyenMai(promoCode);
+                    }
+                    long discountAmount = rs.getLong("discount");
+                    if (discountAmount > 0) {
+                        current.setGiamGia(discountAmount);
+                    }
                     invoices.add(current);
                 }
 
@@ -224,5 +260,16 @@ public class HoaDonRepository {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String normalizePaymentMethod(String paymentMethod) {
+        if (paymentMethod == null || paymentMethod.isBlank()) {
+            return "TIEN_MAT";
+        }
+        String normalized = paymentMethod.trim().toUpperCase();
+        if (!"TIEN_MAT".equals(normalized) && !"CHUYEN_KHOAN".equals(normalized)) {
+            throw new IllegalArgumentException("Phương thức thanh toán không hợp lệ");
+        }
+        return normalized;
     }
 }

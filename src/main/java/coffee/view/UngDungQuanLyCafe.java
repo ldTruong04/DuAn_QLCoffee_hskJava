@@ -6,10 +6,12 @@ import coffee.controller.screens.DieuKhienNhanVien;
 import coffee.controller.screens.DieuKhienHoaDon;
 import coffee.controller.screens.DieuKhienDanhSachHoaDon;
 import coffee.controller.screens.DieuKhienDangNhap;
+import coffee.controller.screens.DieuKhienKhuyenMai;
 import coffee.controller.screens.DieuKhienSanPham;
 import coffee.controller.screens.DieuKhienThongKe;
 import coffee.controller.screens.DieuKhienBan;
 import coffee.dao.KhoiTaoCoSoDuLieu;
+import coffee.dao.KhuyenMaiRepository;
 import coffee.dao.NhanVienRepository;
 import coffee.dao.HoaDonRepository;
 import coffee.dao.SanPhamRepository;
@@ -25,6 +27,7 @@ import coffee.view.screens.ManHinhDangNhap;
 import coffee.view.screens.ManHinhSanPham;
 import coffee.view.screens.ManHinhThongKe;
 import coffee.view.screens.ManHinhBan;
+import coffee.view.screens.ManHinhKhuyenMai;
 
 import javax.swing.*;
 import java.awt.*;
@@ -45,6 +48,7 @@ public class UngDungQuanLyCafe extends JFrame {
     private final JButton banButton = new ModernButton("Bàn", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
     private final JButton thanhToanButton = new ModernButton("Thanh toán", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
     private final JButton hoaDonButton = new ModernButton("Hóa đơn", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
+    private final JButton khuyenMaiButton = new ModernButton("Khuyến mãi", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
     private final JButton nhanVienButton = new ModernButton("Nhân viên", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
     private final JButton thongKeButton = new ModernButton("Thống kê", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
     private final JButton dangXuatButton = new ModernButton("Đăng xuất", ModernUITheme.DANGER_COLOR, Color.WHITE);
@@ -60,6 +64,7 @@ public class UngDungQuanLyCafe extends JFrame {
     private final ManHinhNhanVien employeeView = new ManHinhNhanVien();
     private final ManHinhHoaDon paymentView = new ManHinhHoaDon();
     private final ManHinhDanhSachHoaDon invoiceView = new ManHinhDanhSachHoaDon();
+    private final ManHinhKhuyenMai promotionView = new ManHinhKhuyenMai();
     private final ManHinhThongKe reportView = new ManHinhThongKe();
 
     private final DieuKhienSanPham productController;
@@ -67,6 +72,7 @@ public class UngDungQuanLyCafe extends JFrame {
     private final DieuKhienNhanVien employeeController;
     private final DieuKhienHoaDon paymentController;
     private final DieuKhienDanhSachHoaDon invoiceController;
+    private final DieuKhienKhuyenMai promotionController;
     private final DieuKhienThongKe reportController;
 
     public UngDungQuanLyCafe() {
@@ -77,7 +83,8 @@ public class UngDungQuanLyCafe extends JFrame {
                 new SanPhamRepository(),
                 new BanRepository(),
                 new NhanVienRepository(),
-                new HoaDonRepository()
+                new HoaDonRepository(),
+                new KhuyenMaiRepository()
         ));
         this.productController = new DieuKhienSanPham(controller, productView);
         this.tableController = new DieuKhienBan(controller, session, tableView);
@@ -85,6 +92,7 @@ public class UngDungQuanLyCafe extends JFrame {
         this.reportController = new DieuKhienThongKe(controller, reportView);
         this.paymentController = new DieuKhienHoaDon(controller, session, paymentView, this::refreshAll);
         this.invoiceController = new DieuKhienDanhSachHoaDon(controller, invoiceView);
+        this.promotionController = new DieuKhienKhuyenMai(controller, promotionView);
         new DieuKhienDangNhap(controller, session, loginView, this::onLoginSuccess);
         initUI();
         refreshAll();
@@ -172,6 +180,7 @@ public class UngDungQuanLyCafe extends JFrame {
         contentPanel.add(tableView, "BAN");
         contentPanel.add(paymentView, "THANH_TOAN");
         contentPanel.add(invoiceView, "HOA_DON");
+        contentPanel.add(promotionView, "KHUYEN_MAI");
         contentPanel.add(employeeView, "NHAN_VIEN");
         contentPanel.add(reportView, "THONG_KE");
 
@@ -191,6 +200,7 @@ public class UngDungQuanLyCafe extends JFrame {
         styleNavButton(banButton);
         styleNavButton(thanhToanButton);
         styleNavButton(hoaDonButton);
+        styleNavButton(khuyenMaiButton);
         styleNavButton(nhanVienButton);
         styleNavButton(thongKeButton);
 
@@ -198,6 +208,7 @@ public class UngDungQuanLyCafe extends JFrame {
         banButton.addActionListener(e -> showScreen("Bàn", "BAN", banButton));
         thanhToanButton.addActionListener(e -> showScreen("Thanh toán", "THANH_TOAN", thanhToanButton));
         hoaDonButton.addActionListener(e -> showScreen("Hóa đơn", "HOA_DON", hoaDonButton));
+        khuyenMaiButton.addActionListener(e -> showScreen("Khuyến mãi", "KHUYEN_MAI", khuyenMaiButton));
         nhanVienButton.addActionListener(e -> showScreen("Nhân viên", "NHAN_VIEN", nhanVienButton));
         thongKeButton.addActionListener(e -> showScreen("Thống kê", "THONG_KE", thongKeButton));
         dangXuatButton.addActionListener(e -> logout());
@@ -206,6 +217,7 @@ public class UngDungQuanLyCafe extends JFrame {
         sidebar.add(banButton);
         sidebar.add(thanhToanButton);
         sidebar.add(hoaDonButton);
+        sidebar.add(khuyenMaiButton);
         sidebar.add(nhanVienButton);
         sidebar.add(thongKeButton);
         sidebar.add(Box.createVerticalStrut(10));
@@ -242,7 +254,7 @@ public class UngDungQuanLyCafe extends JFrame {
     }
 
     private void setActiveNav(JButton activeButton) {
-        JButton[] buttons = {sanPhamButton, banButton, thanhToanButton, hoaDonButton, nhanVienButton, thongKeButton};
+        JButton[] buttons = {sanPhamButton, banButton, thanhToanButton, hoaDonButton, khuyenMaiButton, nhanVienButton, thongKeButton};
         for (JButton button : buttons) {
             Color targetColor = button == activeButton ? ModernUITheme.PRIMARY_COLOR : ModernUITheme.BG_TERTIARY;
             if (button instanceof ModernButton modernButton) {
@@ -277,6 +289,7 @@ public class UngDungQuanLyCafe extends JFrame {
         employeeController.refresh();
         paymentController.refresh();
         invoiceController.refresh();
+        promotionController.refresh();
         reportController.refresh();
     }
 

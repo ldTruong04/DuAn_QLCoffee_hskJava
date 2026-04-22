@@ -9,6 +9,7 @@ import coffee.model.SanPham;
 import coffee.view.screens.ManHinhBan;
 
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
 import java.util.List;
 
 public class DieuKhienBan {
@@ -38,29 +39,12 @@ public class DieuKhienBan {
             JOptionPane.showMessageDialog(view, "Đã gọi món vào hóa đơn #" + invoiceId);
         }));
 
-        view.increaseItemButton.addActionListener(e -> runAction(() -> {
-            ensureEditableInvoice();
-            var item = view.getSelectedOrderItem();
-            if (item == null) {
-                throw new IllegalArgumentException("Vui lòng chọn món đã gọi");
+        view.itemTableModel.addTableModelListener(e -> {
+            if (e.getType() != TableModelEvent.UPDATE || e.getColumn() != 1) {
+                return;
             }
-            int newQuantity = item.getSoLuong() + 1;
-            appController.updateInvoiceItemQuantity(currentInvoiceId, item.getSanPham().getMa(), newQuantity);
-        }));
-
-        view.decreaseItemButton.addActionListener(e -> runAction(() -> {
-            ensureEditableInvoice();
-            var item = view.getSelectedOrderItem();
-            if (item == null) {
-                throw new IllegalArgumentException("Vui lòng chọn món đã gọi");
-            }
-            int newQuantity = item.getSoLuong() - 1;
-            if (newQuantity <= 0) {
-                appController.removeInvoiceItem(currentInvoiceId, item.getSanPham().getMa());
-            } else {
-                appController.updateInvoiceItemQuantity(currentInvoiceId, item.getSanPham().getMa(), newQuantity);
-            }
-        }));
+            runAction(() -> applyQuantityEditFromCell(e.getFirstRow()));
+        });
     }
 
     public void refresh() {
@@ -131,4 +115,39 @@ public class DieuKhienBan {
             throw new IllegalStateException("Bàn này chưa có hóa đơn để chỉnh sửa");
         }
     }
+
+    private void applyQuantityEditFromCell(int row) {
+        ensureEditableInvoice();
+        var item = view.getOrderItemAtRow(row);
+        if (item == null) {
+            return;
+        }
+
+        Object editedValue = view.itemTableModel.getValueAt(row, 1);
+        int targetQuantity = parseEditedQuantity(editedValue, item.getSoLuong());
+        int productId = item.getSanPham().getMa();
+
+        if (targetQuantity <= 0) {
+            appController.removeInvoiceItem(currentInvoiceId, productId);
+        } else {
+            appController.updateInvoiceItemQuantity(currentInvoiceId, productId, targetQuantity);
+        }
+    }
+
+    private int parseEditedQuantity(Object editedValue, int currentQuantity) {
+        if (editedValue == null) {
+            throw new IllegalArgumentException("Số lượng không hợp lệ");
+        }
+        String text = editedValue.toString().trim();
+        if (text.isEmpty()) {
+            throw new IllegalArgumentException("Số lượng không hợp lệ");
+        }
+
+        if (text.startsWith("+") || text.startsWith("-")) {
+            int delta = Integer.parseInt(text);
+            return currentQuantity + delta;
+        }
+        return Integer.parseInt(text);
+    }
+
 }

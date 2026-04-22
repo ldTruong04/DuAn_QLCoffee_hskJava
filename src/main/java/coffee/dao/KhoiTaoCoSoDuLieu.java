@@ -79,9 +79,13 @@ public class KhoiTaoCoSoDuLieu {
                         table_id INTEGER NOT NULL REFERENCES cafe_table(id),
                         employee_id INTEGER NOT NULL REFERENCES employee(id),
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        paid BOOLEAN NOT NULL DEFAULT FALSE
+                                                paid BOOLEAN NOT NULL DEFAULT FALSE,
+                                                payment_method VARCHAR(20)
                     )
                     """);
+
+                        st.execute("ALTER TABLE invoice ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20)");
+                        st.execute("UPDATE invoice SET payment_method = 'TIEN_MAT' WHERE paid = TRUE AND (payment_method IS NULL OR payment_method = '')");
 
             st.execute("""
                     CREATE TABLE IF NOT EXISTS invoice_item (
@@ -92,6 +96,25 @@ public class KhoiTaoCoSoDuLieu {
                         PRIMARY KEY (invoice_id, product_id)
                     )
                     """);
+
+            st.execute("""
+                    CREATE TABLE IF NOT EXISTS promotion (
+                        id SERIAL PRIMARY KEY,
+                        code VARCHAR(40) NOT NULL UNIQUE,
+                        discount_type VARCHAR(20) NOT NULL,
+                        discount_value NUMERIC(12,2) NOT NULL CHECK (discount_value > 0),
+                        active BOOLEAN NOT NULL DEFAULT TRUE,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """);
+
+            st.execute("ALTER TABLE promotion ADD COLUMN IF NOT EXISTS discount_type VARCHAR(20)");
+            st.execute("ALTER TABLE promotion ADD COLUMN IF NOT EXISTS discount_value NUMERIC(12,2)");
+            st.execute("ALTER TABLE promotion ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT TRUE");
+            st.execute("ALTER TABLE promotion ADD COLUMN IF NOT EXISTS created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
+
+            st.execute("ALTER TABLE invoice ADD COLUMN IF NOT EXISTS promotion_code VARCHAR(40)");
+            st.execute("ALTER TABLE invoice ADD COLUMN IF NOT EXISTS discount NUMERIC(12,2) NOT NULL DEFAULT 0");
 
             st.execute("""
                     INSERT INTO employee(ho_ten, nam_sinh, luong, gioi_tinh, anh_dai_dien, role, username, password)
@@ -119,6 +142,18 @@ public class KhoiTaoCoSoDuLieu {
                     INSERT INTO product(name, category, price, description, image_path)
                     SELECT 'Trà đào', 'Trà', 35000, 'Trà đào thanh mát', NULL
                     WHERE (SELECT COUNT(*) FROM product) = 2
+                    """);
+
+            st.execute("""
+                    INSERT INTO promotion(code, discount_type, discount_value, active)
+                    SELECT 'WELCOME10', 'PERCENT', 10, TRUE
+                    WHERE NOT EXISTS (SELECT 1 FROM promotion WHERE code = 'WELCOME10')
+                    """);
+
+            st.execute("""
+                    INSERT INTO promotion(code, discount_type, discount_value, active)
+                    SELECT 'GIAM30000', 'FIXED', 30000, TRUE
+                    WHERE NOT EXISTS (SELECT 1 FROM promotion WHERE code = 'GIAM30000')
                     """);
 
             for (int i = 1; i <= 8; i++) {

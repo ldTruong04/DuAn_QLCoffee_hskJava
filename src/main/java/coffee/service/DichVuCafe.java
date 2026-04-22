@@ -4,11 +4,13 @@ import coffee.dao.NhanVienRepository;
 import coffee.dao.HoaDonRepository;
 import coffee.dao.SanPhamRepository;
 import coffee.dao.BanRepository;
+import coffee.dao.KhuyenMaiRepository;
 import coffee.model.BanCafe;
 import coffee.model.GioiTinh;
 import coffee.model.NhanVien;
 import coffee.model.HoaDon;
 import coffee.model.ChiTietHoaDon;
+import coffee.model.KhuyenMai;
 import coffee.model.SanPham;
 import coffee.model.VaiTro;
 
@@ -20,15 +22,18 @@ public class DichVuCafe {
     private final BanRepository tableRepository;
     private final NhanVienRepository employeeRepository;
     private final HoaDonRepository invoiceRepository;
+    private final KhuyenMaiRepository promotionRepository;
 
     public DichVuCafe(SanPhamRepository productRepository,
                        BanRepository tableRepository,
                        NhanVienRepository employeeRepository,
-                       HoaDonRepository invoiceRepository) {
+                       HoaDonRepository invoiceRepository,
+                       KhuyenMaiRepository promotionRepository) {
         this.productRepository = productRepository;
         this.tableRepository = tableRepository;
         this.employeeRepository = employeeRepository;
         this.invoiceRepository = invoiceRepository;
+        this.promotionRepository = promotionRepository;
     }
 
     public Optional<NhanVien> login(String username, String password) {
@@ -181,6 +186,10 @@ public class DichVuCafe {
     }
 
     public double payInvoice(int invoiceId) {
+        return payInvoice(invoiceId, "TIEN_MAT");
+    }
+
+    public double payInvoice(int invoiceId, String paymentMethod) {
         HoaDon invoice = invoiceRepository.findDetailedById(invoiceId);
         if (invoice.getDanhSachMon().isEmpty()) {
             throw new IllegalStateException("Hóa đơn chưa có món");
@@ -190,7 +199,7 @@ public class DichVuCafe {
             throw new IllegalStateException("Hóa đơn đã thanh toán");
         }
 
-        invoiceRepository.markPaid(invoiceId);
+        invoiceRepository.markPaid(invoiceId, paymentMethod);
         tableRepository.setDangSuDung(invoice.getBan().getMa(), false);
         return invoice.getTongTien();
     }
@@ -239,6 +248,26 @@ public class DichVuCafe {
         return invoiceRepository.sumRevenue();
     }
 
+    public KhuyenMai createPromotion(String code, boolean theoPhanTram, double giaTriGiam, boolean kichHoat) {
+        String normalizedCode = normalizePromoCode(code);
+        validatePromotionValue(theoPhanTram, giaTriGiam);
+        return promotionRepository.insert(normalizedCode, theoPhanTram, giaTriGiam, kichHoat);
+    }
+
+    public void updatePromotion(int id, String code, boolean theoPhanTram, double giaTriGiam, boolean kichHoat) {
+        String normalizedCode = normalizePromoCode(code);
+        validatePromotionValue(theoPhanTram, giaTriGiam);
+        promotionRepository.update(id, normalizedCode, theoPhanTram, giaTriGiam, kichHoat);
+    }
+
+    public void deletePromotion(int id) {
+        promotionRepository.delete(id);
+    }
+
+    public List<KhuyenMai> getPromotions() {
+        return promotionRepository.findAll();
+    }
+
     public NhanVien getEmployeeById(int id) {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Nhân viên không tồn tại"));
@@ -260,5 +289,23 @@ public class DichVuCafe {
         if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException(fieldName + " không được để trống");
         }
+    }
+
+    private String normalizePromoCode(String code) {
+        requireText(code, "Mã khuyến mãi");
+        return code.trim().toUpperCase();
+    }
+
+    private void validatePromotionValue(boolean theoPhanTram, double giaTriGiam) {
+        if (giaTriGiam <= 0) {
+            throw new IllegalArgumentException("Giá trị giảm phải > 0");
+        }
+        if (theoPhanTram && giaTriGiam > 100) {
+            throw new IllegalArgumentException("Giảm theo phần trăm phải từ 0 đến 100");
+        }
+    }
+
+    public void updateInvoicePromotionAndDiscount(int invoiceId, String promotionCode, long discountAmount) {
+        invoiceRepository.updatePromotionAndDiscount(invoiceId, promotionCode, discountAmount);
     }
 }

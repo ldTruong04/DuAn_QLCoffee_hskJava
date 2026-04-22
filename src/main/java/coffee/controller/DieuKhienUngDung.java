@@ -2,6 +2,7 @@ package coffee.controller;
 
 import coffee.model.NhanVien;
 import coffee.model.HoaDon;
+import coffee.model.KhuyenMai;
 import coffee.model.SanPham;
 import coffee.model.GioiTinh;
 import coffee.model.VaiTro;
@@ -81,6 +82,10 @@ public class DieuKhienUngDung {
         return service.payInvoice(invoiceId);
     }
 
+    public double payInvoice(int invoiceId, String paymentMethod) {
+        return service.payInvoice(invoiceId, paymentMethod);
+    }
+
     public String getInvoiceDetailText(int invoiceId) {
         return service.buildInvoiceDetailText(invoiceId);
     }
@@ -107,5 +112,25 @@ public class DieuKhienUngDung {
 
     public List<SanPham> getTopProducts(int limit) {
         return service.getTopProducts(limit);
+    }
+
+    public void addPromotion(String code, boolean theoPhanTram, double giaTriGiam, boolean kichHoat) {
+        service.createPromotion(code, theoPhanTram, giaTriGiam, kichHoat);
+    }
+
+    public void updatePromotion(int id, String code, boolean theoPhanTram, double giaTriGiam, boolean kichHoat) {
+        service.updatePromotion(id, code, theoPhanTram, giaTriGiam, kichHoat);
+    }
+
+    public void deletePromotion(int id) {
+        service.deletePromotion(id);
+    }
+
+    public List<KhuyenMai> getPromotions() {
+        return service.getPromotions();
+    }
+
+    public void updateInvoicePromotionAndDiscount(int invoiceId, String promotionCode, long discountAmount) {
+        service.updateInvoicePromotionAndDiscount(invoiceId, promotionCode, discountAmount);
     }
 }
