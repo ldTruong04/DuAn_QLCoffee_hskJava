@@ -20,5 +20,36 @@ public class DieuKhienDangNhap {
                 onLoginSuccess.run();
             }, () -> JOptionPane.showMessageDialog(view, "Sai tài khoản hoặc mật khẩu"));
         });
+
+        view.forgotPasswordButton.addActionListener(e -> {
+            String email = JOptionPane.showInputDialog(view, "Nhập email của bạn:");
+            if (email == null || email.trim().isEmpty()) {
+                return;
+            }
+            try {
+                appController.generateAndSendOTP(email.trim());
+                String otp = JOptionPane.showInputDialog(view, "Mã OTP đã được gửi. Nhập mã OTP (6 số):");
+                if (otp == null || otp.trim().isEmpty()) {
+                    return;
+                }
+                
+                JPasswordField pwdField = new JPasswordField(15);
+                Object[] message = {
+                    "Nhập mật khẩu mới:", pwdField
+                };
+                int option = JOptionPane.showConfirmDialog(view, message, "Đổi mật khẩu", JOptionPane.OK_CANCEL_OPTION);
+                if (option == JOptionPane.OK_OPTION) {
+                    String newPassword = new String(pwdField.getPassword());
+                    if (newPassword.isEmpty()) {
+                        JOptionPane.showMessageDialog(view, "Mật khẩu không được để trống");
+                        return;
+                    }
+                    appController.verifyOTPAndResetPassword(email.trim(), otp.trim(), newPassword);
+                    JOptionPane.showMessageDialog(view, "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(view, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
     }
 }

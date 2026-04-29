@@ -37,8 +37,8 @@ public class KhoTamBoNho {
             tables.add(new BanCafe(tableId.getAndIncrement(), "B" + i));
         }
 
-        employees.add(new NhanVien(employeeId.getAndIncrement(), "Quản lý", 1985, 15000000, GioiTinh.NAM, null, VaiTro.ADMIN, "admin", "admin123"));
-        employees.add(new NhanVien(employeeId.getAndIncrement(), "Nhân viên A", 1998, 8000000, GioiTinh.NU, null, VaiTro.STAFF, "staff", "staff123"));
+        employees.add(new NhanVien(employeeId.getAndIncrement(), "Quản lý", 1985, 15000000, GioiTinh.NAM, null, VaiTro.ADMIN, "admin", "admin123", "admin@example.com"));
+        employees.add(new NhanVien(employeeId.getAndIncrement(), "Nhân viên A", 1998, 8000000, GioiTinh.NU, null, VaiTro.STAFF, "staff", "staff123", null));
     }
 
     public SanPham addProduct(String name, String category, double price, String moTa, String duongDanHinhAnh) {
@@ -54,7 +54,7 @@ public class KhoTamBoNho {
     }
 
     public NhanVien addEmployee(String hoTen, int namSinh, double luong, GioiTinh gioiTinh, String anhDaiDien, VaiTro role, String username, String password) {
-        NhanVien employee = new NhanVien(employeeId.getAndIncrement(), hoTen, namSinh, luong, gioiTinh, anhDaiDien, role, username, password);
+        NhanVien employee = new NhanVien(employeeId.getAndIncrement(), hoTen, namSinh, luong, gioiTinh, anhDaiDien, role, username, password, null);
         employees.add(employee);
         return employee;
     }

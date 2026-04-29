@@ -68,18 +68,36 @@ public class ModernButton extends JButton {
         int iconW = icon == null ? 0 : icon.getIconWidth();
         int iconH = icon == null ? 0 : icon.getIconHeight();
         int gap = icon == null ? 0 : Math.max(0, getIconTextGap());
-        int textW = fm.stringWidth(getText());
-        int totalW = iconW + gap + textW;
 
-        int x = (getWidth() - totalW) / 2;
-        int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+        String text = getText() == null ? "" : getText();
+        String[] lines = text.split("\n");
+        int lineHeight = fm.getHeight();
+        int totalTextH = lines.length * lineHeight;
+        
+        int maxTextW = 0;
+        for (String line : lines) {
+            maxTextW = Math.max(maxTextW, fm.stringWidth(line));
+        }
+
+        int totalW = iconW + gap + maxTextW;
+        int totalH = Math.max(iconH, totalTextH);
+
+        int startX = (getWidth() - totalW) / 2;
+        int startY = (getHeight() - totalH) / 2;
 
         if (icon != null) {
             int iconY = (getHeight() - iconH) / 2;
-            icon.paintIcon(this, g2d, x, iconY);
-            x += iconW + gap;
+            icon.paintIcon(this, g2d, startX, iconY);
+            startX += iconW + gap;
         }
-        g2d.drawString(getText(), x, y);
+
+        int textY = startY + fm.getAscent();
+        for (String line : lines) {
+            int lineW = fm.stringWidth(line);
+            int lineX = startX + (maxTextW - lineW) / 2;
+            g2d.drawString(line, lineX, textY);
+            textY += lineHeight;
+        }
     }
 
     @Override

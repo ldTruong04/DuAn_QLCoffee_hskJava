@@ -29,6 +29,8 @@ public class KhoiTaoCoSoDuLieu {
                         occupied BOOLEAN NOT NULL DEFAULT FALSE
                     )
                     """);
+            st.execute("ALTER TABLE cafe_table ADD COLUMN IF NOT EXISTS reserved BOOLEAN NOT NULL DEFAULT FALSE");
+            st.execute("ALTER TABLE cafe_table ADD COLUMN IF NOT EXISTS disabled BOOLEAN NOT NULL DEFAULT FALSE");
 
             st.execute("""
                     CREATE TABLE IF NOT EXISTS employee (
@@ -40,7 +42,8 @@ public class KhoiTaoCoSoDuLieu {
                         anh_dai_dien TEXT,
                         role VARCHAR(10) NOT NULL,
                         username VARCHAR(60) NOT NULL UNIQUE,
-                        password VARCHAR(100) NOT NULL
+                        password VARCHAR(100) NOT NULL,
+                        email VARCHAR(100)
                     )
                     """);
 
@@ -49,6 +52,7 @@ public class KhoiTaoCoSoDuLieu {
             st.execute("ALTER TABLE employee ADD COLUMN IF NOT EXISTS luong NUMERIC(14,2) NOT NULL DEFAULT 0");
             st.execute("ALTER TABLE employee ADD COLUMN IF NOT EXISTS gioi_tinh VARCHAR(10) NOT NULL DEFAULT 'KHAC'");
             st.execute("ALTER TABLE employee ADD COLUMN IF NOT EXISTS anh_dai_dien TEXT");
+            st.execute("ALTER TABLE employee ADD COLUMN IF NOT EXISTS email VARCHAR(100)");
                         st.execute("""
                                         DO $$
                                         BEGIN
@@ -117,8 +121,8 @@ public class KhoiTaoCoSoDuLieu {
             st.execute("ALTER TABLE invoice ADD COLUMN IF NOT EXISTS discount NUMERIC(12,2) NOT NULL DEFAULT 0");
 
             st.execute("""
-                    INSERT INTO employee(ho_ten, nam_sinh, luong, gioi_tinh, anh_dai_dien, role, username, password)
-                    SELECT 'Quản lý', 1985, 15000000, 'NAM', NULL, 'ADMIN', 'admin', 'admin123'
+                    INSERT INTO employee(ho_ten, nam_sinh, luong, gioi_tinh, anh_dai_dien, role, username, password, email)
+                    SELECT 'Quản lý', 1985, 15000000, 'NAM', NULL, 'ADMIN', 'admin', 'admin123', 'admin@example.com'
                     WHERE NOT EXISTS (SELECT 1 FROM employee WHERE username = 'admin')
                     """);
 

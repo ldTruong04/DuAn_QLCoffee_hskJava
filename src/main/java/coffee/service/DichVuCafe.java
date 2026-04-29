@@ -14,8 +14,13 @@ import coffee.model.KhuyenMai;
 import coffee.model.SanPham;
 import coffee.model.VaiTro;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import coffee.service.EmailService;
+import coffee.util.OTPUtil;
 
 public class DichVuCafe {
     private final SanPhamRepository productRepository;
@@ -23,6 +28,9 @@ public class DichVuCafe {
     private final NhanVienRepository employeeRepository;
     private final HoaDonRepository invoiceRepository;
     private final KhuyenMaiRepository promotionRepository;
+    
+    private final Map<String, String> otpStorage = new HashMap<>();
+    private final Map<String, Long> otpExpiry = new HashMap<>();
 
     public DichVuCafe(SanPhamRepository productRepository,
                        BanRepository tableRepository,
@@ -72,11 +80,23 @@ public class DichVuCafe {
         tableRepository.update(id, name, occupied);
     }
 
+    public void setDaDat(int tableId, boolean reserved) {
+        tableRepository.findById(tableId)
+                .orElseThrow(() -> new IllegalArgumentException("Bàn không tồn tại"));
+        tableRepository.setDaDat(tableId, reserved);
+    }
+
+    public void setTableDisabled(int tableId, boolean disabled) {
+        tableRepository.findById(tableId)
+                .orElseThrow(() -> new IllegalArgumentException("Bàn không tồn tại"));
+        tableRepository.setKhongSuDung(tableId, disabled);
+    }
+
     public void deleteTable(int id) {
         tableRepository.delete(id);
     }
 
-    public NhanVien createEmployee(String hoTen, int namSinh, double luong, GioiTinh gioiTinh, String anhDaiDien, VaiTro role, String username, String password) {
+    public NhanVien createEmployee(String hoTen, int namSinh, double luong, GioiTinh gioiTinh, String anhDaiDien, VaiTro role, String username, String password, String email) {
         requireText(hoTen, "Họ tên");
         requireText(username, "Tên đăng nhập");
         requireText(password, "Mật khẩu");
@@ -92,7 +112,7 @@ public class DichVuCafe {
         if (luong < 0) {
             throw new IllegalArgumentException("Lương phải >= 0");
         }
-        return employeeRepository.insert(hoTen, namSinh, luong, gioiTinh, anhDaiDien, role, username, password);
+        return employeeRepository.insert(hoTen, namSinh, luong, gioiTinh, anhDaiDien, role, username, password, email);
     }
 
     public void updateEmployee(int id, String hoTen, int namSinh, double luong, GioiTinh gioiTinh, String anhDaiDien, VaiTro role, String username, String password) {
@@ -111,7 +131,28 @@ public class DichVuCafe {
         if (luong < 0) {
             throw new IllegalArgumentException("Lương phải >= 0");
         }
-        employeeRepository.update(id, hoTen, namSinh, luong, gioiTinh, anhDaiDien, role, username, password);
+        // Giữ nguyên email cũ khi cập nhật qua hàm này
+        NhanVien old = employeeRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nhân viên"));
+        employeeRepository.update(id, hoTen, namSinh, luong, gioiTinh, anhDaiDien, role, username, password, old.getEmail());
+    }
+
+    public void updateEmployee(int id, String hoTen, int namSinh, double luong, GioiTinh gioiTinh, String anhDaiDien, VaiTro role, String username, String password, String email) {
+        requireText(hoTen, "Họ tên");
+        requireText(username, "Tên đăng nhập");
+        requireText(password, "Mật khẩu");
+        if (role == null) {
+            throw new IllegalArgumentException("Vui lòng chọn vai trò");
+        }
+        if (gioiTinh == null) {
+            throw new IllegalArgumentException("Vui lòng chọn giới tính");
+        }
+        if (namSinh < 1900 || namSinh > java.time.Year.now().getValue()) {
+            throw new IllegalArgumentException("Năm sinh không hợp lệ");
+        }
+        if (luong < 0) {
+            throw new IllegalArgumentException("Lương phải >= 0");
+        }
+        employeeRepository.update(id, hoTen, namSinh, luong, gioiTinh, anhDaiDien, role, username, password, email);
     }
 
     public void deleteEmployee(int id) {
@@ -307,5 +348,41 @@ public class DichVuCafe {
 
     public void updateInvoicePromotionAndDiscount(int invoiceId, String promotionCode, long discountAmount) {
         invoiceRepository.updatePromotionAndDiscount(invoiceId, promotionCode, discountAmount);
+    }
+
+    public void generateAndSendOTP(String email) throws Exception {
+        NhanVien nv = employeeRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Email không tồn tại trong hệ thống"));
+        
+        String otp = OTPUtil.generateOTP();
+        otpStorage.put(email, otp);
+        otpExpiry.put(email, System.currentTimeMillis() + 5 * 60 * 1000); // 5 minutes
+        
+        EmailService.sendOTP(email, otp);
+    }
+
+    public void verifyOTPAndResetPassword(String email, String otp, String newPassword) {
+        if (!otpStorage.containsKey(email)) {
+            throw new IllegalArgumentException("OTP chưa được tạo hoặc đã hết hạn");
+        }
+        if (System.currentTimeMillis() > otpExpiry.get(email)) {
+            otpStorage.remove(email);
+            otpExpiry.remove(email);
+            throw new IllegalArgumentException("Mã OTP đã hết hạn");
+        }
+        if (!otpStorage.get(email).equals(otp)) {
+            throw new IllegalArgumentException("Mã OTP không chính xác");
+        }
+        
+        NhanVien nv = employeeRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Email không tồn tại trong hệ thống"));
+        
+        // Update password
+        employeeRepository.update(nv.getMa(), nv.getHoTen(), nv.getNamSinh(), nv.getLuong(), nv.getGioiTinh(), 
+                nv.getAnhDaiDien(), nv.getVaiTro(), nv.getTenDangNhap(), newPassword, nv.getEmail());
+                
+        // Clear OTP
+        otpStorage.remove(email);
+        otpExpiry.remove(email);
     }
 }

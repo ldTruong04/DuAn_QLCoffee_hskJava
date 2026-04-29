@@ -10,6 +10,7 @@ public class NhanVien {
     private VaiTro vaiTro;
     private String tenDangNhap;
     private String matKhau;
+    private String email;
 
     public NhanVien(int ma,
                     String hoTen,
@@ -19,7 +20,8 @@ public class NhanVien {
                     String anhDaiDien,
                     VaiTro vaiTro,
                     String tenDangNhap,
-                    String matKhau) {
+                    String matKhau,
+                    String email) {
         this.ma = ma;
         this.hoTen = hoTen;
         this.namSinh = namSinh;
@@ -29,10 +31,11 @@ public class NhanVien {
         this.vaiTro = vaiTro;
         this.tenDangNhap = tenDangNhap;
         this.matKhau = matKhau;
+        this.email = email;
     }
 
     public NhanVien(int ma, String hoTen, VaiTro vaiTro, String tenDangNhap, String matKhau) {
-        this(ma, hoTen, 1990, 0.0, GioiTinh.KHAC, null, vaiTro, tenDangNhap, matKhau);
+        this(ma, hoTen, 1990, 0.0, GioiTinh.KHAC, null, vaiTro, tenDangNhap, matKhau, null);
     }
 
     public int getMa() {
@@ -71,6 +74,10 @@ public class NhanVien {
         return matKhau;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
     public void setHoTen(String hoTen) {
         this.hoTen = hoTen;
     }
@@ -101,6 +108,10 @@ public class NhanVien {
 
     public void setMatKhau(String matKhau) {
         this.matKhau = matKhau;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     // Compatibility aliases for existing code paths

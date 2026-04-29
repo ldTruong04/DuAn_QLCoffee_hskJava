@@ -42,16 +42,24 @@ public class DieuKhienUngDung {
         service.updateTable(id, name, occupied);
     }
 
+    public void setTableReserved(int id, boolean reserved) {
+        service.setDaDat(id, reserved);
+    }
+
+    public void setTableDisabled(int id, boolean disabled) {
+        service.setTableDisabled(id, disabled);
+    }
+
     public void deleteTable(int id) {
         service.deleteTable(id);
     }
 
-    public void addEmployee(String hoTen, int namSinh, double luong, GioiTinh gioiTinh, String anhDaiDien, VaiTro role, String username, String password) {
-        service.createEmployee(hoTen, namSinh, luong, gioiTinh, anhDaiDien, role, username, password);
+    public void addEmployee(String hoTen, int namSinh, double luong, GioiTinh gioiTinh, String anhDaiDien, VaiTro role, String username, String password, String email) {
+        service.createEmployee(hoTen, namSinh, luong, gioiTinh, anhDaiDien, role, username, password, email);
     }
 
-    public void updateEmployee(int id, String hoTen, int namSinh, double luong, GioiTinh gioiTinh, String anhDaiDien, VaiTro role, String username, String password) {
-        service.updateEmployee(id, hoTen, namSinh, luong, gioiTinh, anhDaiDien, role, username, password);
+    public void updateEmployee(int id, String hoTen, int namSinh, double luong, GioiTinh gioiTinh, String anhDaiDien, VaiTro role, String username, String password, String email) {
+        service.updateEmployee(id, hoTen, namSinh, luong, gioiTinh, anhDaiDien, role, username, password, email);
     }
 
     public void deleteEmployee(int id) {
@@ -132,5 +140,13 @@ public class DieuKhienUngDung {
 
     public void updateInvoicePromotionAndDiscount(int invoiceId, String promotionCode, long discountAmount) {
         service.updateInvoicePromotionAndDiscount(invoiceId, promotionCode, discountAmount);
+    }
+
+    public void generateAndSendOTP(String email) throws Exception {
+        service.generateAndSendOTP(email);
+    }
+
+    public void verifyOTPAndResetPassword(String email, String otp, String newPassword) {
+        service.verifyOTPAndResetPassword(email, otp, newPassword);
     }
 }

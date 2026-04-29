@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.function.IntConsumer;
 
 public class ManHinhBan extends JPanel {
-    public final JPanel tableGridPanel = new JPanel(new GridLayout(0, 2, ModernUITheme.PADDING_MD, ModernUITheme.PADDING_MD));
+    public final JPanel tableGridPanel = new JPanel(new GridLayout(0, 4, ModernUITheme.PADDING_MD, ModernUITheme.PADDING_MD));
     public final DefaultTableModel itemTableModel = new DefaultTableModel(new Object[]{"Tên món", "Số lượng", "Thành tiền"}, 0) {
         @Override
         public boolean isCellEditable(int row, int column) {
@@ -36,6 +36,10 @@ public class ManHinhBan extends JPanel {
     public final JLabel selectedStoreProductLabel = new JLabel("Món đã chọn: -");
     public final JTextField quantityField = new ModernTextField(8);
     public final JButton orderButton = new ModernButton("Thêm vào bàn", ModernUITheme.SUCCESS_COLOR, ModernUITheme.TEXT_PRIMARY);
+    public final JButton reserveButton = new ModernButton("Đặt bàn", new Color(241, 196, 15), Color.WHITE);
+    public final JButton cancelReserveButton = new ModernButton("Hủy đặt", ModernUITheme.DANGER_COLOR, Color.WHITE);
+    public final JButton maintenanceButton = new ModernButton("Bảo trì", ModernUITheme.WARNING_COLOR, Color.WHITE);
+    public Runnable onAddTableRequested;
     private List<SanPham> storeProducts = List.of();
     private List<ChiTietHoaDon> currentOrderItems = List.of();
 
@@ -101,6 +105,16 @@ public class ManHinhBan extends JPanel {
         infoPanel.add(selectedStatusLabel);
         infoPanel.add(selectedInvoiceLabel);
         infoPanel.add(totalLabel);
+        
+        reserveButton.setPreferredSize(new Dimension(90, 28));
+        cancelReserveButton.setPreferredSize(new Dimension(90, 28));
+        maintenanceButton.setPreferredSize(new Dimension(90, 28));
+        reserveButton.setVisible(false);
+        cancelReserveButton.setVisible(false);
+        maintenanceButton.setVisible(false);
+        infoPanel.add(reserveButton);
+        infoPanel.add(cancelReserveButton);
+        infoPanel.add(maintenanceButton);
 
         JPanel detailContent = new JPanel(new BorderLayout(0, ModernUITheme.PADDING_SM));
         detailContent.setBackground(ModernUITheme.BG_PRIMARY);
@@ -175,19 +189,42 @@ public class ManHinhBan extends JPanel {
 
     public void renderTableCards(List<BanCafe> tables, IntConsumer onSelect, Integer selectedTableId) {
         tableGridPanel.removeAll();
-        for (BanCafe table : tables) {
+        
+        List<BanCafe> sortedTables = new ArrayList<>(tables);
+        sortedTables.sort((t1, t2) -> {
+            boolean t1MangVe = t1.getTen().toLowerCase().contains("mang về") || t1.getTen().toLowerCase().contains("mang đi");
+            boolean t2MangVe = t2.getTen().toLowerCase().contains("mang về") || t2.getTen().toLowerCase().contains("mang đi");
+            if (t1MangVe && !t2MangVe) return -1;
+            if (!t1MangVe && t2MangVe) return 1;
+            return Integer.compare(t1.getMa(), t2.getMa());
+        });
+
+        for (BanCafe table : sortedTables) {
             boolean selected = selectedTableId != null && selectedTableId == table.getMa();
+            String statusText = table.isKhongSuDung() ? "Bảo trì" : (table.isDangSuDung() ? "Đang dùng" : (table.isDaDat() ? "Đã đặt" : "Trống"));
+            Color bgColor = colorForTable(table, selected);
+            Color fgColor = bgColor.equals(Color.WHITE) ? ModernUITheme.PRIMARY_DARK : Color.WHITE;
+            
             ModernButton button = new ModernButton(
-                    table.getTen() + " - " + (table.isDangSuDung() ? "Đang dùng" : "Trống"),
-                    colorForTable(table, selected),
-                    Color.WHITE
+                    table.getTen() + "\n[" + statusText + "]",
+                    bgColor,
+                    fgColor
             );
-                button.setPreferredSize(new Dimension(100, 50));
-            button.setBaseColor(colorForTable(table, selected));
+            button.setPreferredSize(new Dimension(80, 80));
+            button.setBaseColor(bgColor);
             button.setToolTipText("Nhấn để xem chi tiết bàn " + table.getTen());
             button.addActionListener(e -> onSelect.accept(table.getMa()));
             tableGridPanel.add(button);
         }
+        
+        ModernButton addButton = new ModernButton("+", ModernUITheme.SUCCESS_COLOR, Color.WHITE);
+        addButton.setPreferredSize(new Dimension(80, 80));
+        addButton.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        addButton.addActionListener(e -> {
+            if (onAddTableRequested != null) onAddTableRequested.run();
+        });
+        tableGridPanel.add(addButton);
+
         tableGridPanel.revalidate();
         tableGridPanel.repaint();
     }
@@ -200,14 +237,23 @@ public class ManHinhBan extends JPanel {
             totalLabel.setText("Tổng cộng: 0 VND");
             setOrderControlsEnabled(false);
             setOrderItems(List.of());
+            reserveButton.setVisible(false);
+            cancelReserveButton.setVisible(false);
             return;
         }
 
         selectedTableLabel.setText("Bàn: " + table.getTen());
-        selectedStatusLabel.setText("Trạng thái: " + (table.isDangSuDung() ? "Đang dùng" : "Trống"));
+        String statusText = table.isKhongSuDung() ? "Bảo trì" : (table.isDangSuDung() ? "Đang dùng" : (table.isDaDat() ? "Đã đặt" : "Trống"));
+        selectedStatusLabel.setText("Trạng thái: " + statusText);
         selectedInvoiceLabel.setText("Hóa đơn: " + (HoaDonHienTai == null ? "Chưa có" : "#" + HoaDonHienTai.getMa()));
-        setOrderControlsEnabled(true);
+        setOrderControlsEnabled(!table.isKhongSuDung());
         setOrderItems(HoaDonHienTai == null ? List.of() : HoaDonHienTai.getDanhSachMon());
+        
+        reserveButton.setVisible(!table.isDangSuDung() && !table.isDaDat() && !table.isKhongSuDung());
+        cancelReserveButton.setVisible(!table.isDangSuDung() && table.isDaDat() && !table.isKhongSuDung());
+        
+        maintenanceButton.setText(table.isKhongSuDung() ? "Mở lại" : "Bảo trì");
+        maintenanceButton.setVisible(!table.isDangSuDung());
     }
 
     public void setProducts(List<SanPham> products) {
@@ -277,11 +323,17 @@ public class ManHinhBan extends JPanel {
     }
 
     private Color colorForTable(BanCafe table, boolean selected) {
-        if (selected) {
-            return ModernUITheme.PRIMARY_COLOR;
+        if (table.isKhongSuDung()) {
+            return new Color(149, 165, 166); // Xám
         }
         if (table.isDangSuDung()) {
-            return new Color(230, 126, 34);
+            return ModernUITheme.DANGER_COLOR;
+        }
+        if (table.isDaDat()) {
+            return new Color(241, 196, 15);
+        }
+        if (selected) {
+            return Color.WHITE;
         }
         return ModernUITheme.SUCCESS_COLOR;
     }

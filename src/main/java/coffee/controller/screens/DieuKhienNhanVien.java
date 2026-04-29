@@ -25,15 +25,16 @@ public class DieuKhienNhanVien {
     private void bind() {
         view.chooseAvatarButton.addActionListener(e -> chooseAvatar());
         view.addButton.addActionListener(e -> runAdminAction(() ->
-                appController.addEmployee(
+            appController.addEmployee(
                 view.fullNameField.getText().trim(),
                 parseInt(view.birthYearField.getText()),
                 parseDouble(view.salaryField.getText()),
-            view.layGioiTinhDaChon(),
+                view.layGioiTinhDaChon(),
                 normalizePath(view.avatarPathField.getText()),
-                        (VaiTro) view.roleBox.getSelectedItem(),
-                        view.usernameField.getText().trim(),
-                new String(view.passwordField.getPassword()))
+                (VaiTro) view.roleBox.getSelectedItem(),
+                view.usernameField.getText().trim(),
+                new String(view.passwordField.getPassword()),
+                view.emailField.getText().trim())
         ));
         view.updateButton.addActionListener(e -> runAdminAction(() ->
                 appController.updateEmployee(
@@ -45,7 +46,8 @@ public class DieuKhienNhanVien {
                 normalizePath(view.avatarPathField.getText()),
                         (VaiTro) view.roleBox.getSelectedItem(),
                         view.usernameField.getText().trim(),
-                new String(view.passwordField.getPassword()))
+                new String(view.passwordField.getPassword()),
+                view.emailField.getText().trim())
         ));
         view.deleteButton.addActionListener(e -> runAdminAction(() ->
                 appController.deleteEmployee(parseInt(view.idField.getText()))
@@ -60,7 +62,8 @@ public class DieuKhienNhanVien {
             view.datGioiTinh(GioiTinh.valueOf(view.tableModel.getValueAt(row, 4).toString()));
             view.roleBox.setSelectedItem(VaiTro.valueOf(view.tableModel.getValueAt(row, 5).toString()));
             view.usernameField.setText(view.tableModel.getValueAt(row, 6).toString());
-            view.capNhatXemTruocAnh(view.tableModel.getValueAt(row, 7).toString());
+            view.emailField.setText(view.tableModel.getValueAt(row, 7).toString());
+            view.capNhatXemTruocAnh(view.tableModel.getValueAt(row, 8).toString());
             }
         });
     }
@@ -76,6 +79,7 @@ public class DieuKhienNhanVien {
                 e.getGioiTinh().name(),
                 e.getVaiTro().name(),
                 e.getTenDangNhap(),
+                e.getEmail() == null ? "" : e.getEmail(),
                 e.getAnhDaiDien() == null ? "" : e.getAnhDaiDien()
             });
         }

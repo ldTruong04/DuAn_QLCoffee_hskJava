@@ -13,10 +13,11 @@ import javax.swing.border.LineBorder;
 
 public class ManHinhNhanVien extends JPanel {
     // GIỮ NGUYÊN TẤT CẢ CÁC BIẾN CŨ
-    public final DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"Mã", "Họ tên", "Năm sinh", "Lương", "Giới tính", "Vai trò", "Username", "Ảnh"}, 0);
+    public final DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"Mã", "Họ tên", "Năm sinh", "Lương", "Giới tính", "Vai trò", "Username", "Email", "Ảnh"}, 0);
     public final JTable table = new JTable(tableModel);
     public final JTextField idField = new ModernTextField(15);
     public final JTextField fullNameField = new ModernTextField(15);
+    public final JTextField emailField = new ModernTextField(15);
     public final JTextField birthYearField = new ModernTextField(15);
     public final JTextField salaryField = new ModernTextField(15);
     public final JRadioButton maleRadio = new JRadioButton("Nam");
@@ -72,8 +73,8 @@ public class ManHinhNhanVien extends JPanel {
         gbc.gridx = 0; gbc.weightx = 0;
         content.add(avatarBox, gbc);
 
-        // Cột thông tin bên phải (4 hàng x 2 cột)
-        JPanel details = new JPanel(new GridLayout(4, 2, 25, 12));
+        // Cột thông tin bên phải
+        JPanel details = new JPanel(new GridLayout(5, 2, 25, 12));
         details.setOpaque(false);
 
         genderGroup.add(maleRadio);
@@ -86,6 +87,7 @@ public class ManHinhNhanVien extends JPanel {
         
         addInput(details, "Mã nhân viên", idField);
         addInput(details, "Họ và tên", fullNameField);
+        addInput(details, "Email", emailField);
         addInput(details, "Năm sinh", birthYearField);
         addInput(details, "Lương cơ bản", salaryField);
         addInput(details, "Giới tính", buildGenderPanel());

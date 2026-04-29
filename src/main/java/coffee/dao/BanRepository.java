@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public class BanRepository {
     public List<BanCafe> findAll() {
-        String sql = "SELECT id, name, occupied FROM cafe_table ORDER BY id";
+        String sql = "SELECT id, name, occupied, reserved, disabled FROM cafe_table ORDER BY id";
         List<BanCafe> tables = new ArrayList<>();
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -20,6 +20,8 @@ public class BanRepository {
             while (rs.next()) {
                 BanCafe table = new BanCafe(rs.getInt("id"), rs.getString("name"));
                 table.setDangSuDung(rs.getBoolean("occupied"));
+                table.setDaDat(rs.getBoolean("reserved"));
+                table.setKhongSuDung(rs.getBoolean("disabled"));
                 tables.add(table);
             }
             return tables;
@@ -29,13 +31,14 @@ public class BanRepository {
     }
 
     public BanCafe insert(String name) {
-        String sql = "INSERT INTO cafe_table(name, occupied) VALUES (?, FALSE) RETURNING id";
+        String sql = "INSERT INTO cafe_table(name, occupied, reserved, disabled) VALUES (?, FALSE, FALSE, FALSE) RETURNING id";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, name);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
-                return new BanCafe(rs.getInt(1), name);
+                BanCafe table = new BanCafe(rs.getInt(1), name);
+                return table;
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -71,6 +74,18 @@ public class BanRepository {
         }
     }
 
+    public void setDaDat(int id, boolean reserved) {
+        String sql = "UPDATE cafe_table SET reserved=? WHERE id=?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBoolean(1, reserved);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void delete(int id) {
         String sql = "DELETE FROM cafe_table WHERE id=?";
         try (Connection conn = DBConnection.getConnection();
@@ -87,7 +102,7 @@ public class BanRepository {
     }
 
     public Optional<BanCafe> findById(int id) {
-        String sql = "SELECT id, name, occupied FROM cafe_table WHERE id=?";
+        String sql = "SELECT id, name, occupied, reserved, disabled FROM cafe_table WHERE id=?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -95,10 +110,24 @@ public class BanRepository {
                 if (rs.next()) {
                     BanCafe table = new BanCafe(rs.getInt("id"), rs.getString("name"));
                     table.setDangSuDung(rs.getBoolean("occupied"));
+                    table.setDaDat(rs.getBoolean("reserved"));
+                    table.setKhongSuDung(rs.getBoolean("disabled"));
                     return Optional.of(table);
                 }
                 return Optional.empty();
             }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void setKhongSuDung(int id, boolean khongSuDung) {
+        String sql = "UPDATE cafe_table SET disabled=? WHERE id=?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBoolean(1, khongSuDung);
+            ps.setInt(2, id);
+            ps.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

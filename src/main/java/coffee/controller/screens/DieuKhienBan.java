@@ -45,6 +45,37 @@ public class DieuKhienBan {
             }
             runAction(() -> applyQuantityEditFromCell(e.getFirstRow()));
         });
+
+        view.reserveButton.addActionListener(e -> runAction(() -> {
+            ensureTableSelected();
+            appController.setTableReserved(selectedTableId, true);
+            JOptionPane.showMessageDialog(view, "Đã đặt bàn thành công");
+        }));
+
+        view.cancelReserveButton.addActionListener(e -> runAction(() -> {
+            ensureTableSelected();
+            appController.setTableReserved(selectedTableId, false);
+            JOptionPane.showMessageDialog(view, "Đã hủy đặt bàn");
+        }));
+
+        view.maintenanceButton.addActionListener(e -> runAction(() -> {
+            ensureTableSelected();
+            BanCafe table = appController.getTables().stream()
+                    .filter(t -> t.getMa() == selectedTableId).findFirst().orElse(null);
+            if (table != null) {
+                boolean newStatus = !table.isKhongSuDung();
+                appController.setTableDisabled(selectedTableId, newStatus);
+                JOptionPane.showMessageDialog(view, newStatus ? "Đã chuyển bàn sang trạng thái bảo trì" : "Đã mở lại bàn");
+            }
+        }));
+
+        view.onAddTableRequested = () -> runAction(() -> {
+            String tableName = JOptionPane.showInputDialog(view, "Nhập tên bàn mới:", "Thêm bàn", JOptionPane.PLAIN_MESSAGE);
+            if (tableName != null && !tableName.trim().isEmpty()) {
+                appController.addTable(tableName.trim());
+                JOptionPane.showMessageDialog(view, "Đã thêm bàn mới thành công!");
+            }
+        });
     }
 
     public void refresh() {
