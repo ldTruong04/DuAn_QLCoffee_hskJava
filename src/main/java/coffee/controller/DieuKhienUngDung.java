@@ -74,6 +74,14 @@ public class DieuKhienUngDung {
         service.addItemToInvoice(invoiceId, productId, quantity);
     }
 
+    public java.util.List<coffee.model.MonOrderBep> getPendingOrderItems() {
+        return service.getPendingOrderItems();
+    }
+
+    public void updateKitchenOrderItemStatus(int invoiceId, int productId, String status) {
+        service.updateKitchenOrderItemStatus(invoiceId, productId, status);
+    }
+
     public int placeOrder(int tableId, NhanVien staff, int productId, int quantity) {
         return service.placeOrder(tableId, staff, productId, quantity);
     }

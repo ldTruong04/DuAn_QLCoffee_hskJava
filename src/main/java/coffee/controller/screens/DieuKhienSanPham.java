@@ -2,6 +2,8 @@ package coffee.controller.screens;
 
 import coffee.controller.DieuKhienUngDung;
 import coffee.model.SanPham;
+import coffee.model.MonOrderBep;
+import coffee.util.PDFUtil;
 import coffee.view.screens.ManHinhSanPham;
 
 import javax.swing.*;
@@ -43,7 +45,8 @@ public class DieuKhienSanPham {
         view.table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && view.table.getSelectedRow() >= 0) {
                 int row = view.table.getSelectedRow();
-                view.idField.setText(view.tableModel.getValueAt(row, 0).toString());
+                String formattedId = view.tableModel.getValueAt(row, 0).toString();
+                view.idField.setText(formattedId.replaceAll("[^0-9]", ""));
                 view.nameField.setText(view.tableModel.getValueAt(row, 1).toString());
                 view.categoryField.setText(view.tableModel.getValueAt(row, 2).toString());
                 view.priceField.setText(view.tableModel.getValueAt(row, 3).toString());
@@ -51,19 +54,68 @@ public class DieuKhienSanPham {
                 view.capNhatXemTruocAnh(view.tableModel.getValueAt(row, 5).toString());
             }
         });
+
+        // Bếp
+        view.completeOrderButton.addActionListener(e -> runAction(() -> {
+            int row = view.kitchenOrderTable.getSelectedRow();
+            if (row < 0) {
+                throw new IllegalArgumentException("Vui lòng chọn món để hoàn thành");
+            }
+            
+            // Get the item directly from the appController list since order matters
+            java.util.List<MonOrderBep> items = appController.getPendingOrderItems();
+            MonOrderBep item = items.get(row);
+            
+            appController.updateKitchenOrderItemStatus(item.getInvoiceId(), item.getProductId(), "COMPLETED");
+            PDFUtil.inDonHang(item);
+            JOptionPane.showMessageDialog(view, "Đã hoàn thành món và in PDF thành công!");
+        }));
+
+        view.cancelOrderButton.addActionListener(e -> runAction(() -> {
+            int row = view.kitchenOrderTable.getSelectedRow();
+            if (row < 0) {
+                throw new IllegalArgumentException("Vui lòng chọn món để hủy");
+            }
+            java.util.List<MonOrderBep> items = appController.getPendingOrderItems();
+            MonOrderBep item = items.get(row);
+            
+            appController.removeInvoiceItem(item.getInvoiceId(), item.getProductId());
+            JOptionPane.showMessageDialog(view, "Đã hủy món và gỡ khỏi hóa đơn thành công!");
+        }));
     }
 
     public void refresh() {
         view.tableModel.setRowCount(0);
         for (SanPham p : appController.getProducts()) {
             view.tableModel.addRow(new Object[]{
-                    p.getMa(),
+                    String.format("SP%03d", p.getMa()),
                     p.getTen(),
                     p.getDanhMuc(),
                     String.format("%.0f", p.getGia()),
                     p.getMoTa() == null ? "" : p.getMoTa(),
                     p.getDuongDanHinhAnh() == null ? "" : p.getDuongDanHinhAnh()
             });
+        }
+        
+        view.kitchenOrderTableModel.setRowCount(0);
+        java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss dd/MM");
+        java.util.List<MonOrderBep> pendingItems = appController.getPendingOrderItems();
+        for (MonOrderBep item : pendingItems) {
+            view.kitchenOrderTableModel.addRow(new Object[]{
+                    String.format("HD%03d", item.getInvoiceId()),
+                    item.getThoiGian().format(dtf),
+                    item.getTenBan(),
+                    item.getTenMon(),
+                    item.getSoLuong(),
+                    "Chờ chế biến"
+            });
+        }
+        
+        int pendingCount = pendingItems.size();
+        if (pendingCount > 0) {
+            view.tabbedPane.setTitleAt(1, "Đơn hàng Bếp (" + pendingCount + ")");
+        } else {
+            view.tabbedPane.setTitleAt(1, "Đơn hàng Bếp");
         }
     }
 

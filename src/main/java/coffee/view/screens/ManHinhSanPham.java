@@ -25,13 +25,74 @@ public class ManHinhSanPham extends JPanel {
     public final JButton updateButton = new ModernButton("Sửa", ModernUITheme.INFO_COLOR, ModernUITheme.TEXT_PRIMARY);
     public final JButton deleteButton = new ModernButton("Xóa", ModernUITheme.DANGER_COLOR, ModernUITheme.TEXT_PRIMARY);
 
-    public ManHinhSanPham() {
-        setLayout(new BorderLayout(0, 20));
-        setBackground(new Color(242, 245, 248));
-        setBorder(new EmptyBorder(20, 20, 20, 20));
+    public final JTabbedPane tabbedPane = new JTabbedPane();
+    
+    // Kitchen Order components
+    public final DefaultTableModel kitchenOrderTableModel = new DefaultTableModel(new Object[]{"Hóa đơn", "Thời gian", "Bàn", "Tên món", "SL", "Trạng thái"}, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+    public final JTable kitchenOrderTable = new JTable(kitchenOrderTableModel);
+    public final JButton completeOrderButton = new ModernButton("Hoàn thành", ModernUITheme.SUCCESS_COLOR, Color.WHITE);
+    public final JButton cancelOrderButton = new ModernButton("Hủy bỏ", ModernUITheme.DANGER_COLOR, Color.WHITE);
 
-        add(buildTopCard(), BorderLayout.NORTH);
-        add(buildTableCard(), BorderLayout.CENTER);
+    public ManHinhSanPham() {
+        setLayout(new BorderLayout());
+        setBackground(new Color(242, 245, 248));
+
+        // Hide id field, use it only for internal tracking
+        idField.setVisible(false);
+
+        // Setup Product Panel
+        JPanel productPanel = new JPanel(new BorderLayout());
+        productPanel.setBackground(new Color(242, 245, 248));
+        productPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JSplitPane productSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, buildTopCard(), buildTableCard());
+        productSplit.setResizeWeight(0.50);
+        productSplit.setContinuousLayout(true);
+        productSplit.setBorder(null);
+        productSplit.setDividerSize(6);
+        productSplit.setOneTouchExpandable(true);
+        productPanel.add(productSplit, BorderLayout.CENTER);
+
+        // Setup Kitchen Order Panel
+        JPanel kitchenPanel = buildKitchenPanel();
+
+        tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        tabbedPane.addTab("Quản lý Sản phẩm", productPanel);
+        tabbedPane.addTab("Đơn hàng Bếp", kitchenPanel);
+
+        add(tabbedPane, BorderLayout.CENTER);
+    }
+
+    private JPanel buildKitchenPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 15));
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel title = new JLabel("DANH SÁCH MÓN ĐANG CHỜ CHẾ BIẾN");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        title.setForeground(ModernUITheme.PRIMARY_DARK);
+        panel.add(title, BorderLayout.NORTH);
+
+        kitchenOrderTable.setFillsViewportHeight(true);
+        ModernStyler.styleTable(kitchenOrderTable);
+        JScrollPane scrollPane = new JScrollPane(kitchenOrderTable);
+        ModernStyler.styleScrollPane(scrollPane);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        footer.setBackground(Color.WHITE);
+        completeOrderButton.setPreferredSize(new Dimension(130, 38));
+        cancelOrderButton.setPreferredSize(new Dimension(110, 38));
+        footer.add(completeOrderButton);
+        footer.add(cancelOrderButton);
+        panel.add(footer, BorderLayout.SOUTH);
+
+        return panel;
     }
 
     private JPanel buildTopCard() {
@@ -47,32 +108,27 @@ public class ManHinhSanPham extends JPanel {
         title.setForeground(new Color(52, 73, 94));
         card.add(title, BorderLayout.NORTH);
 
-        JPanel content = new JPanel(new GridBagLayout());
-        content.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(0, 10, 0, 10);
-        gbc.fill = GridBagConstraints.BOTH;
-
-        JPanel imageBox = buildImageBox();
-        gbc.gridx = 0;
-        gbc.weightx = 0;
-        content.add(imageBox, gbc);
-
-        JPanel details = buildDetailsPanel();
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
-        content.add(details, gbc);
-
-        card.add(content, BorderLayout.CENTER);
+        // Horizontal split: Image on left, Details on right
+        JPanel imageSection = buildImageSection();
+        JPanel detailsSection = buildDetailsSection();
+        
+        JSplitPane horizontalSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, imageSection, detailsSection);
+        horizontalSplit.setBorder(null);
+        horizontalSplit.setDividerLocation(200);
+        horizontalSplit.setResizeWeight(0.25);
+        horizontalSplit.setContinuousLayout(true);
+        
+        card.add(horizontalSplit, BorderLayout.CENTER);
         card.add(buildActionButtons(), BorderLayout.SOUTH);
         return card;
     }
 
-    private JPanel buildImageBox() {
-        JPanel imageBox = new JPanel(new BorderLayout(8, 8));
-        imageBox.setOpaque(false);
+    private JPanel buildImageSection() {
+        JPanel imageSection = new JPanel(new BorderLayout(0, 12));
+        imageSection.setOpaque(false);
 
         imagePreviewLabel.setPreferredSize(new Dimension(160, 160));
+        imagePreviewLabel.setMaximumSize(new Dimension(160, 160));
         imagePreviewLabel.setBorder(new LineBorder(new Color(240, 240, 240), 2));
         imagePreviewLabel.setOpaque(true);
         imagePreviewLabel.setBackground(Color.WHITE);
@@ -80,56 +136,79 @@ public class ManHinhSanPham extends JPanel {
         imagePreviewLabel.setVerticalTextPosition(SwingConstants.BOTTOM);
         imagePreviewLabel.setHorizontalTextPosition(SwingConstants.CENTER);
 
-        JPanel pathPanel = new JPanel(new BorderLayout(8, 0));
-        pathPanel.setOpaque(false);
+        browseImageButton.setPreferredSize(new Dimension(160, 38));
         
-        pathPanel.add(browseImageButton, BorderLayout.EAST);
-
-        imageBox.add(imagePreviewLabel, BorderLayout.CENTER);
-        imageBox.add(pathPanel, BorderLayout.SOUTH);
-        return imageBox;
+        imageSection.add(imagePreviewLabel, BorderLayout.NORTH);
+        imageSection.add(browseImageButton, BorderLayout.CENTER);
+        imageSection.add(Box.createVerticalGlue(), BorderLayout.SOUTH);
+        
+        return imageSection;
     }
 
-    private JPanel buildDetailsPanel() {
-        JPanel details = new JPanel(new GridBagLayout());
-        details.setOpaque(false);
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(0, 0, 12, 20);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        addInput(details, "Mã sản phẩm", idField, gbc);
-
-        gbc.gridx = 1;
-        addInput(details, "Tên sản phẩm", nameField, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        addInput(details, "Danh mục", categoryField, gbc);
-
-        gbc.gridx = 1;
-        addInput(details, "Giá bán", priceField, gbc);
-
-        descriptionArea.setLineWrap(true);
-        descriptionArea.setWrapStyleWord(true);
-        descriptionArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        descriptionArea.setBackground(Color.WHITE);
-        descriptionArea.setForeground(new Color(55, 55, 55));
-        descriptionArea.setBorder(new LineBorder(new Color(220, 225, 230), 1, true));
-        JScrollPane descriptionScroll = new JScrollPane(descriptionArea);
-        descriptionScroll.setPreferredSize(new Dimension(200, 80));
-        descriptionScroll.setBorder(BorderFactory.createEmptyBorder());
-
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.gridwidth = 2;
-        addInput(details, "Mô tả", descriptionScroll, gbc);
-
-        return details;
+    private JPanel buildDetailsSection() {
+        JPanel detailsSection = new JPanel(new BorderLayout(0, 0));
+        detailsSection.setOpaque(false);
+        
+        JPanel details = buildDetailsPanel();
+        JScrollPane scroll = new JScrollPane(details);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        
+        detailsSection.add(scroll, BorderLayout.CENTER);
+        return detailsSection;
     }
+
+private JPanel buildDetailsPanel() {
+    JPanel details = new JPanel(new GridBagLayout());
+    details.setOpaque(false);
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+    gbc.insets = new Insets(5, 5, 5, 5); // Khoảng cách giữa các ô
+
+    // Hàng 1: Tên sản phẩm (Chiếm toàn bộ chiều ngang)
+    gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2; gbc.weightx = 1.0;
+    details.add(createInputGroup("Tên sản phẩm", nameField), gbc);
+
+    // Hàng 2: Danh mục (Cột 1) và Giá bán (Cột 2)
+    gbc.gridy = 1; gbc.gridwidth = 1; gbc.weightx = 0.5;
+    details.add(createInputGroup("Danh mục", categoryField), gbc);
+    
+    gbc.gridx = 1;
+    details.add(createInputGroup("Giá bán", priceField), gbc);
+
+    // Hàng 3: Mô tả (Chiếm toàn bộ chiều ngang)
+    gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2; gbc.weightx = 1.0;
+    
+    descriptionArea.setLineWrap(true);
+    descriptionArea.setWrapStyleWord(true);
+    descriptionArea.setBorder(new LineBorder(new Color(220, 225, 230), 1, true));
+    JScrollPane descScroll = new JScrollPane(descriptionArea);
+    descScroll.setPreferredSize(new Dimension(0, 80)); // Giảm chiều cao mô tả
+    
+    JPanel descPanel = new JPanel(new BorderLayout(0, 5));
+    descPanel.setOpaque(false);
+    JLabel descLabel = new JLabel("Mô tả");
+    descLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+    descPanel.add(descLabel, BorderLayout.NORTH);
+    descPanel.add(descScroll, BorderLayout.CENTER);
+    
+    details.add(descPanel, gbc);
+
+    return details;
+}
+
+// Hàm hỗ trợ tạo label + field nhanh
+private JPanel createInputGroup(String labelText, JTextField field) {
+    JPanel panel = new JPanel(new BorderLayout(0, 5));
+    panel.setOpaque(false);
+    JLabel label = new JLabel(labelText);
+    label.setFont(new Font("Segoe UI", Font.BOLD, 12));
+    label.setForeground(new Color(100, 100, 100));
+    panel.add(label, BorderLayout.NORTH);
+    panel.add(field, BorderLayout.CENTER);
+    return panel;
+}
 
     private JPanel buildActionButtons() {
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
@@ -156,29 +235,14 @@ public class ManHinhSanPham extends JPanel {
         title.setForeground(new Color(127, 140, 141));
         card.add(title, BorderLayout.NORTH);
 
+        table.setFillsViewportHeight(true);
+        ModernStyler.styleTable(table);
         JScrollPane scrollPane = new JScrollPane(table);
         ModernStyler.styleScrollPane(scrollPane);
-        ModernStyler.styleTable(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         card.add(scrollPane, BorderLayout.CENTER);
 
         return card;
-    }
-
-    private void addInput(JPanel panel, String labelText, JComponent field, GridBagConstraints gbc) {
-        JPanel group = new JPanel(new BorderLayout(0, 5));
-        group.setOpaque(false);
-        JLabel label = new JLabel(labelText);
-        label.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        label.setForeground(new Color(100, 100, 100));
-        group.add(label, BorderLayout.NORTH);
-
-        if (field instanceof JTextField) {
-            field.setPreferredSize(new Dimension(220, 34));
-        }
-
-        group.add(field, BorderLayout.CENTER);
-        panel.add(group, gbc);
     }
 
     public void capNhatXemTruocAnh(String duongDan) {
@@ -197,7 +261,7 @@ public class ManHinhSanPham extends JPanel {
         }
 
         ImageIcon icon = new ImageIcon(duongDan);
-        Image scaled = icon.getImage().getScaledInstance(220, 120, Image.SCALE_SMOOTH);
+        Image scaled = icon.getImage().getScaledInstance(140, 140, Image.SCALE_SMOOTH);
         imagePreviewLabel.setIcon(new ImageIcon(scaled));
         imagePreviewLabel.setText(file.getName());
     }

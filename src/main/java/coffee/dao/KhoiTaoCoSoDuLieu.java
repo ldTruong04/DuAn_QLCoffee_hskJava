@@ -100,6 +100,7 @@ public class KhoiTaoCoSoDuLieu {
                         PRIMARY KEY (invoice_id, product_id)
                     )
                     """);
+            st.execute("ALTER TABLE invoice_item ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'PENDING'");
 
             st.execute("""
                     CREATE TABLE IF NOT EXISTS promotion (

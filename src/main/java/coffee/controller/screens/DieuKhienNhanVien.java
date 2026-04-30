@@ -55,7 +55,8 @@ public class DieuKhienNhanVien {
         view.table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && view.table.getSelectedRow() >= 0) {
                 int row = view.table.getSelectedRow();
-                view.idField.setText(view.tableModel.getValueAt(row, 0).toString());
+                String formattedId = view.tableModel.getValueAt(row, 0).toString();
+                view.idField.setText(formattedId.replaceAll("[^0-9]", ""));
             view.fullNameField.setText(view.tableModel.getValueAt(row, 1).toString());
             view.birthYearField.setText(view.tableModel.getValueAt(row, 2).toString());
             view.salaryField.setText(view.tableModel.getValueAt(row, 3).toString());
@@ -72,7 +73,7 @@ public class DieuKhienNhanVien {
         view.tableModel.setRowCount(0);
         for (NhanVien e : appController.getEmployees()) {
             view.tableModel.addRow(new Object[]{
-                e.getMa(),
+                String.format("NV%03d", e.getMa()),
                 e.getHoTen(),
                 e.getNamSinh(),
                 String.format("%.0f", e.getLuong()),

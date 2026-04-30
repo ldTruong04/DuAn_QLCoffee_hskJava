@@ -36,14 +36,26 @@ public class ManHinhNhanVien extends JPanel {
 
     public ManHinhNhanVien() {
         setLayout(new BorderLayout(0, 20));
-        setBackground(new Color(242, 245, 248)); 
+        setBackground(new Color(242, 245, 248));
         setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        add(buildTopCard(), BorderLayout.NORTH);
-        add(buildTableCard(), BorderLayout.CENTER);
+        add(buildSplitCard(), BorderLayout.CENTER);
     }
 
-    private JPanel buildTopCard() {
+    private JPanel buildSplitCard() {
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, buildDetailCard(), buildTableCard());
+        splitPane.setResizeWeight(0.5);
+        splitPane.setContinuousLayout(true);
+        splitPane.setBorder(null);
+        splitPane.setDividerSize(6);
+
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+        wrapper.add(splitPane, BorderLayout.CENTER);
+        return wrapper;
+    }
+
+    private JPanel buildDetailCard() {
         JPanel card = new JPanel(new BorderLayout(15, 15));
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
@@ -69,12 +81,13 @@ public class ManHinhNhanVien extends JPanel {
         avatarPreviewLabel.setBorder(new LineBorder(new Color(240, 240, 240), 2));
         avatarBox.add(avatarPreviewLabel, BorderLayout.CENTER);
         avatarBox.add(chooseAvatarButton, BorderLayout.SOUTH);
-        
-        gbc.gridx = 0; gbc.weightx = 0;
+
+        gbc.gridx = 0;
+        gbc.weightx = 0.4;
         content.add(avatarBox, gbc);
 
         // Cột thông tin bên phải
-        JPanel details = new JPanel(new GridLayout(5, 2, 25, 12));
+        JPanel details = new JPanel(new GridLayout(4, 2, 25, 12));
         details.setOpaque(false);
 
         genderGroup.add(maleRadio);
@@ -84,8 +97,8 @@ public class ManHinhNhanVien extends JPanel {
         styleGenderRadio(maleRadio);
         styleGenderRadio(femaleRadio);
         styleGenderRadio(otherRadio);
-        
-        addInput(details, "Mã nhân viên", idField);
+
+        idField.setVisible(false);
         addInput(details, "Họ và tên", fullNameField);
         addInput(details, "Email", emailField);
         addInput(details, "Năm sinh", birthYearField);
@@ -95,7 +108,8 @@ public class ManHinhNhanVien extends JPanel {
         addInput(details, "Tên đăng nhập", usernameField);
         addInput(details, "Mật khẩu", passwordField);
 
-        gbc.gridx = 1; gbc.weightx = 1.0;
+        gbc.gridx = 1;
+        gbc.weightx = 0.6;
         content.add(details, gbc);
 
         card.add(content, BorderLayout.CENTER);

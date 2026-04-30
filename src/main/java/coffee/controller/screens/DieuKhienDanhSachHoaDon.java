@@ -31,7 +31,7 @@ public class DieuKhienDanhSachHoaDon {
         view.invoiceTableModel.setRowCount(0);
         for (HoaDon invoice : appController.getInvoices()) {
             view.invoiceTableModel.addRow(new Object[]{
-                    invoice.getMa(),
+                    String.format("HD%03d", invoice.getMa()),
                     "Khách lẻ",
                     invoice.getNhanVien().getHoTen(),
                     String.format("%.0f", invoice.getTongTien()),
@@ -117,7 +117,7 @@ public class DieuKhienDanhSachHoaDon {
             return null;
         }
         try {
-            return Integer.parseInt(value.toString());
+            return Integer.parseInt(value.toString().replaceAll("[^0-9]", ""));
         } catch (NumberFormatException ex) {
             return null;
         }
@@ -126,7 +126,7 @@ public class DieuKhienDanhSachHoaDon {
     private void reselectInvoice(int invoiceId) {
         for (int i = 0; i < view.invoiceTableModel.getRowCount(); i++) {
             Object value = view.invoiceTableModel.getValueAt(i, 0);
-            if (value != null && value.toString().equals(String.valueOf(invoiceId))) {
+            if (value != null && value.toString().replaceAll("[^0-9]", "").equals(String.valueOf(invoiceId))) {
                 view.invoiceTable.setRowSelectionInterval(i, i);
                 showSelectedInvoiceDetails();
                 return;

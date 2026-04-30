@@ -226,6 +226,14 @@ public class DichVuCafe {
         invoiceRepository.deleteInvoiceItem(invoiceId, productId);
     }
 
+    public List<coffee.model.MonOrderBep> getPendingOrderItems() {
+        return invoiceRepository.getPendingOrderItems();
+    }
+
+    public void updateKitchenOrderItemStatus(int invoiceId, int productId, String status) {
+        invoiceRepository.updateInvoiceItemStatus(invoiceId, productId, status);
+    }
+
     public double payInvoice(int invoiceId) {
         return payInvoice(invoiceId, "TIEN_MAT");
     }

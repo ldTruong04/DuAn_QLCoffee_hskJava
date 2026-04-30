@@ -291,6 +291,13 @@ public class UngDungQuanLyCafe extends JFrame {
         invoiceController.refresh();
         promotionController.refresh();
         reportController.refresh();
+        
+        int pendingCount = controller.getPendingOrderItems().size();
+        if (pendingCount > 0) {
+            sanPhamButton.setText("Sản phẩm (" + pendingCount + ")");
+        } else {
+            sanPhamButton.setText("Sản phẩm");
+        }
     }
 
     private void onLoginSuccess() {
@@ -304,5 +311,15 @@ public class UngDungQuanLyCafe extends JFrame {
 
     private void updateClock() {
         dateTimeLabel.setText(java.time.LocalDateTime.now().format(dateTimeFormatter));
+        
+        // Cập nhật số lượng đơn bếp theo thời gian thực
+        if (session.getCurrentUser() != null) {
+            int pendingCount = controller.getPendingOrderItems().size();
+            if (pendingCount > 0) {
+                sanPhamButton.setText("Sản phẩm (" + pendingCount + ")");
+            } else {
+                sanPhamButton.setText("Sản phẩm");
+            }
+        }
     }
 }

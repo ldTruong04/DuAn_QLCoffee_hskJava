@@ -5,6 +5,9 @@ import coffee.util.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 
 public class ManHinhThongKe extends JPanel {
     public final JLabel doanhThuValueLabel = new JLabel("0 VND");
@@ -12,6 +15,12 @@ public class ManHinhThongKe extends JPanel {
     public final JLabel hoaDonDaThanhToanValueLabel = new JLabel("0");
     public final JLabel giaTriTrungBinhValueLabel = new JLabel("0 VND");
     public final JLabel capNhatLanCuoiLabel = new JLabel("Cập nhật: -");
+
+    public final JTextField fromDateField = new ModernTextField(8);
+    public final JTextField toDateField = new ModernTextField(8);
+    public final JTextField shiftDateField = new ModernTextField(8);
+    public final JButton applyFilterButton = new ModernButton("Áp dụng", ModernUITheme.INFO_COLOR, ModernUITheme.TEXT_PRIMARY);
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public final DefaultTableModel topSanPhamTableModel = new DefaultTableModel(
             new Object[]{"Sản phẩm", "Loại", "Đã bán", "Doanh thu"}, 0
@@ -73,7 +82,110 @@ public class ManHinhThongKe extends JPanel {
         actionWrap.add(refreshButton);
         topBar.add(actionWrap, BorderLayout.EAST);
 
+        JPanel filterPanel = buildFilterPanel();
+        topBar.add(filterPanel, BorderLayout.SOUTH);
+
         return topBar;
+    }
+
+    private JPanel buildFilterPanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 4));
+        panel.setOpaque(false);
+
+        JLabel fromLabel = new JLabel("Từ ngày:");
+        fromLabel.setFont(ModernUITheme.FONT_SMALL);
+        fromLabel.setForeground(ModernUITheme.TEXT_SECONDARY);
+        panel.add(fromLabel);
+
+        fromDateField.setText(LocalDate.now().minusDays(6).format(dateFormatter));
+        fromDateField.setEditable(false);
+        fromDateField.setPreferredSize(new Dimension(100, 28));
+        panel.add(fromDateField);
+
+        JButton fromDateBtn = new JButton("📅");
+        fromDateBtn.setFont(new Font("Arial", Font.PLAIN, 14));
+        fromDateBtn.setPreferredSize(new Dimension(32, 28));
+        fromDateBtn.addActionListener(e -> showDatePicker(fromDateField));
+        panel.add(fromDateBtn);
+
+        JLabel toLabel = new JLabel("Đến ngày:");
+        toLabel.setFont(ModernUITheme.FONT_SMALL);
+        toLabel.setForeground(ModernUITheme.TEXT_SECONDARY);
+        panel.add(toLabel);
+
+        toDateField.setText(LocalDate.now().format(dateFormatter));
+        toDateField.setEditable(false);
+        toDateField.setPreferredSize(new Dimension(100, 28));
+        panel.add(toDateField);
+
+        JButton toDateBtn = new JButton("📅");
+        toDateBtn.setFont(new Font("Arial", Font.PLAIN, 14));
+        toDateBtn.setPreferredSize(new Dimension(32, 28));
+        toDateBtn.addActionListener(e -> showDatePicker(toDateField));
+        panel.add(toDateBtn);
+
+        JLabel shiftLabel = new JLabel("Ngày ca:");
+        shiftLabel.setFont(ModernUITheme.FONT_SMALL);
+        shiftLabel.setForeground(ModernUITheme.TEXT_SECONDARY);
+        panel.add(shiftLabel);
+
+        shiftDateField.setText(LocalDate.now().format(dateFormatter));
+        shiftDateField.setEditable(false);
+        shiftDateField.setPreferredSize(new Dimension(100, 28));
+        panel.add(shiftDateField);
+
+        JButton shiftDateBtn = new JButton("📅");
+        shiftDateBtn.setFont(new Font("Arial", Font.PLAIN, 14));
+        shiftDateBtn.setPreferredSize(new Dimension(32, 28));
+        shiftDateBtn.addActionListener(e -> showDatePicker(shiftDateField));
+        panel.add(shiftDateBtn);
+
+        applyFilterButton.setPreferredSize(new Dimension(100, 28));
+        panel.add(applyFilterButton);
+
+        return panel;
+    }
+
+    private void showDatePicker(JTextField targetField) {
+        JPanel datePanel = new JPanel(new BorderLayout(8, 8));
+        datePanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        datePanel.setBackground(ModernUITheme.BG_PRIMARY);
+
+        SpinnerDateModel dateModel = new SpinnerDateModel();
+        Calendar cal = Calendar.getInstance();
+        try {
+            LocalDate date = LocalDate.parse(targetField.getText(), dateFormatter);
+            cal.set(date.getYear(), date.getMonthValue() - 1, date.getDayOfMonth());
+        } catch (Exception ex) {
+            // Use current date if parsing fails
+        }
+        dateModel.setValue(cal.getTime());
+
+        JSpinner dateSpinner = new JSpinner(dateModel);
+        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "dd/MM/yyyy");
+        dateSpinner.setEditor(dateEditor);
+
+        datePanel.add(new JLabel("Chọn ngày:"), BorderLayout.NORTH);
+        datePanel.add(dateSpinner, BorderLayout.CENTER);
+
+        int option = JOptionPane.showConfirmDialog(
+                SwingUtilities.getWindowAncestor(this),
+                datePanel,
+                "Chọn ngày",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (option == JOptionPane.OK_OPTION) {
+            Calendar selectedCal = Calendar.getInstance();
+            selectedCal.setTime((java.util.Date) dateModel.getValue());
+            LocalDate selectedDate = LocalDate.of(
+                    selectedCal.get(Calendar.YEAR),
+                    selectedCal.get(Calendar.MONTH) + 1,
+                    selectedCal.get(Calendar.DAY_OF_MONTH)
+            );
+            targetField.setText(selectedDate.format(dateFormatter));
+        }
     }
 
     private JPanel buildContent() {
@@ -87,26 +199,26 @@ public class ManHinhThongKe extends JPanel {
         kpiPanel.add(createKpiCard("Đã thanh toán", hoaDonDaThanhToanValueLabel));
         kpiPanel.add(createKpiCard("Trung bình/đơn", giaTriTrungBinhValueLabel));
 
-        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, buildTopProductPanel(), buildRecentInvoicePanel());
-        splitPane.setBorder(null);
-        splitPane.setDividerLocation(220);
-        splitPane.setResizeWeight(0.48);
-        splitPane.setContinuousLayout(true);
-
         JTabbedPane chartTabs = new JTabbedPane();
         chartTabs.setFont(ModernUITheme.FONT_SMALL);
         chartTabs.addTab("Theo ngày", bieuDoTheoNgayPanel);
         chartTabs.addTab("Theo tháng", bieuDoTheoThangPanel);
         chartTabs.addTab("Theo ca", bieuDoTheoCaPanel);
 
-        JSplitPane lowerSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, splitPane, chartTabs);
-        lowerSplit.setBorder(null);
-        lowerSplit.setDividerLocation(430);
-        lowerSplit.setResizeWeight(0.60);
-        lowerSplit.setContinuousLayout(true);
+        JSplitPane topSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, chartTabs, buildTopProductPanel());
+        topSplit.setBorder(null);
+        topSplit.setDividerLocation(260);
+        topSplit.setResizeWeight(0.55);
+        topSplit.setContinuousLayout(true);
+
+        JSplitPane mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, topSplit, buildRecentInvoicePanel());
+        mainSplit.setBorder(null);
+        mainSplit.setDividerLocation(430);
+        mainSplit.setResizeWeight(0.60);
+        mainSplit.setContinuousLayout(true);
 
         content.add(kpiPanel, BorderLayout.NORTH);
-        content.add(lowerSplit, BorderLayout.CENTER);
+        content.add(mainSplit, BorderLayout.CENTER);
         return content;
     }
 

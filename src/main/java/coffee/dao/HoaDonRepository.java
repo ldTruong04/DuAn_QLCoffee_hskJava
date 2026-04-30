@@ -47,10 +47,10 @@ public class HoaDonRepository {
 
     public void upsertInvoiceItem(int invoiceId, int productId, int quantity, double unitPrice) {
         String sql = """
-                INSERT INTO invoice_item(invoice_id, product_id, quantity, unit_price)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO invoice_item(invoice_id, product_id, quantity, unit_price, status)
+                VALUES (?, ?, ?, ?, 'PENDING')
                 ON CONFLICT (invoice_id, product_id)
-                DO UPDATE SET quantity = invoice_item.quantity + EXCLUDED.quantity
+                DO UPDATE SET quantity = invoice_item.quantity + EXCLUDED.quantity, status = 'PENDING'
                 """;
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -138,7 +138,7 @@ public class HoaDonRepository {
                        t.id table_id, t.name table_name, t.occupied,
                       e.id employee_id, e.ho_ten employee_name, e.role, e.username, e.password,
                   p.id product_id, p.name product_name, p.category, p.price, p.description, p.image_path,
-                       ii.quantity, ii.unit_price
+                       ii.quantity, ii.unit_price, ii.status
                 FROM invoice i
                 JOIN cafe_table t ON t.id = i.table_id
                 JOIN employee e ON e.id = i.employee_id
@@ -195,7 +195,7 @@ public class HoaDonRepository {
                             rs.getString("description"),
                             rs.getString("image_path")
                     );
-                    current.getDanhSachMon().add(new ChiTietHoaDon(product, rs.getInt("quantity")));
+                    current.getDanhSachMon().add(new ChiTietHoaDon(product, rs.getInt("quantity"), rs.getString("status")));
                 }
             }
             return invoices;
@@ -271,5 +271,56 @@ public class HoaDonRepository {
             throw new IllegalArgumentException("Phương thức thanh toán không hợp lệ");
         }
         return normalized;
+    }
+
+    public void updateInvoiceItemStatus(int invoiceId, int productId, String status) {
+        String sql = "UPDATE invoice_item SET status=? WHERE invoice_id=? AND product_id=?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, invoiceId);
+            ps.setInt(3, productId);
+            if (ps.executeUpdate() == 0) {
+                throw new IllegalArgumentException("Món không tồn tại trong hóa đơn");
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<coffee.model.MonOrderBep> getPendingOrderItems() {
+        String sql = """
+                SELECT ii.invoice_id, ii.product_id, ii.quantity, ii.status,
+                       p.name AS product_name, p.price AS unit_price,
+                       t.name AS table_name, i.created_at
+                FROM invoice_item ii
+                JOIN invoice i ON i.id = ii.invoice_id
+                JOIN product p ON p.id = ii.product_id
+                JOIN cafe_table t ON t.id = i.table_id
+                WHERE ii.status = 'PENDING'
+                ORDER BY i.created_at ASC
+                """;
+        List<coffee.model.MonOrderBep> items = new ArrayList<>();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                items.add(new coffee.model.MonOrderBep(
+                        rs.getInt("invoice_id"),
+                        rs.getInt("product_id"),
+                        rs.getString("product_name"),
+                        rs.getInt("quantity"),
+                        rs.getDouble("unit_price"),
+                        rs.getString("table_name"),
+                        rs.getTimestamp("created_at").toLocalDateTime(),
+                        rs.getString("status")
+                ));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return items;
     }
 }
