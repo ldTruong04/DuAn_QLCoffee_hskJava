@@ -39,6 +39,7 @@ public class DieuKhienHoaDon {
         view.bindStoreProductSelection();
         view.bindInvoiceTypeChange(this::onContextChanged);
         view.bindTableChange(this::onContextChanged);
+        view.bindTableStatusRefresh(this::onContextChanged);
         view.bindCashInputChange(this::capNhatTienThoiTamTinh);
         view.bindPromotionSelection(this::onPromotionSelected);
         view.bindApplyPromotion(this::apDungKhuyenMaiTuNhapTay);
@@ -196,6 +197,15 @@ public class DieuKhienHoaDon {
         view.setInvoiceItems(openInvoice == null ? List.of() : openInvoice.getDanhSachMon(), currentInvoiceId);
         view.boKhuyenMai();
         view.setTableSelectionEnabled(!view.isTakeawaySelected());
+        if (view.isTakeawaySelected()) {
+            view.setTableStatusText("Mang đi");
+        } else if (tableId == null) {
+            view.setTableStatusText("-");
+        } else if (openInvoice == null || openInvoice.getDanhSachMon().isEmpty()) {
+            view.setTableStatusText("Bàn trống");
+        } else {
+            view.setTableStatusText("Đang dùng");
+        }
         view.setActionButtonsEnabled(view.isTakeawaySelected() || tableId != null);
         capNhatTienThoiTamTinh();
     }

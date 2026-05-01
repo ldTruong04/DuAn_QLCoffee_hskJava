@@ -18,6 +18,9 @@ target/
 .factorypath
 .project
 .settings
+
+### Environment files ###
+.env
 .springBeans
 .sts4-cache
 

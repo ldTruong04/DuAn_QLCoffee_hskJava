@@ -23,6 +23,8 @@ public class ManHinhHoaDon extends JPanel {
     public final JRadioButton mangDiRadio = new JRadioButton("Bán mang đi");
     public final ButtonGroup typeGroup = new ButtonGroup();
     public final JComboBox<BanCafe> tableBox = new JComboBox<>();
+    public final JLabel tableStatusValueLabel = new JLabel("Trạng thái: -");
+    public final JButton refreshTableStatusButton = new ModernButton("Làm mới", ModernUITheme.INFO_COLOR, ModernUITheme.TEXT_PRIMARY);
     public final JTextField customerNameField = new ModernTextField(15);
     public final JTextField customerPhoneField = new ModernTextField(15);
     public final JLabel employeeNameLabel = new JLabel("Nhân viên: -");
@@ -115,8 +117,8 @@ public class ManHinhHoaDon extends JPanel {
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
         splitPane.setBorder(null);
-        splitPane.setDividerLocation(400);
-        splitPane.setResizeWeight(0.50);
+        splitPane.setDividerLocation(700);
+        splitPane.setResizeWeight(0.33);
         splitPane.setContinuousLayout(true);
         add(splitPane, BorderLayout.CENTER);
 
@@ -154,9 +156,22 @@ public class ManHinhHoaDon extends JPanel {
         gbc.gridx = 1; gbc.gridy = 0;
         formPanel.add(createFieldLabel("Chọn bàn"), gbc);
         gbc.gridx = 2;
-        formPanel.add(tableBox, gbc);
+        JPanel tableSelectionWrap = new JPanel(new BorderLayout(6, 0));
+        tableSelectionWrap.setOpaque(false);
+        tableBox.setPreferredSize(new Dimension(170, 30));
+        refreshTableStatusButton.setPreferredSize(new Dimension(90, 30));
+        tableSelectionWrap.add(tableBox, BorderLayout.CENTER);
+        tableSelectionWrap.add(refreshTableStatusButton, BorderLayout.EAST);
+        formPanel.add(tableSelectionWrap, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 1; gbc.gridy = 1;
+        formPanel.add(createFieldLabel("Trạng thái bàn"), gbc);
+        gbc.gridx = 2;
+        tableStatusValueLabel.setFont(ModernUITheme.FONT_SMALL);
+        tableStatusValueLabel.setForeground(ModernUITheme.TEXT_SECONDARY);
+        formPanel.add(tableStatusValueLabel, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2;
         formPanel.add(createFieldLabel("Tên khách hàng"), gbc);
         gbc.gridx = 1;
         gbc.gridwidth = 2;
@@ -178,7 +193,6 @@ public class ManHinhHoaDon extends JPanel {
         invoiceInfoLabel.setForeground(ModernUITheme.TEXT_SECONDARY);
         formPanel.add(invoiceInfoLabel, gbc);
 
-        tableBox.setPreferredSize(new Dimension(170, 30));
         customerNameField.setPreferredSize(new Dimension(160, 30));
         customerPhoneField.setPreferredSize(new Dimension(160, 30));
 
@@ -196,8 +210,8 @@ public class ManHinhHoaDon extends JPanel {
         ModernStyler.styleTable(invoiceItemTable);
         JScrollPane itemScroll = new JScrollPane(invoiceItemTable);
         ModernStyler.styleScrollPane(itemScroll);
-        itemScroll.setPreferredSize(new Dimension(100, 190));
-        itemScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 190));
+        itemScroll.setPreferredSize(new Dimension(100, 180));
+        itemScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
 
         JPanel tableWrap = new JPanel();
         tableWrap.setLayout(new BoxLayout(tableWrap, BoxLayout.Y_AXIS));
@@ -219,7 +233,7 @@ public class ManHinhHoaDon extends JPanel {
         // --- Row 1: Summary (Tạm tính / Giảm giá / Thành tiền) + Khuyến mãi ---
         JPanel row1 = new JPanel(new BorderLayout(8, 0));
         row1.setOpaque(false);
-        row1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
+        row1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 190));
 
         // Summary (left)
         JPanel summaryPanel = new JPanel(new GridBagLayout());
@@ -561,6 +575,14 @@ public class ManHinhHoaDon extends JPanel {
 
     public void bindTableChange(Runnable action) {
         tableBox.addActionListener(e -> action.run());
+    }
+
+    public void bindTableStatusRefresh(Runnable action) {
+        refreshTableStatusButton.addActionListener(e -> action.run());
+    }
+
+    public void setTableStatusText(String status) {
+        tableStatusValueLabel.setText(status == null || status.isBlank() ? "Trạng thái: -" : "Trạng thái: " + status);
     }
 
     public void setActionButtonsEnabled(boolean enabled) {

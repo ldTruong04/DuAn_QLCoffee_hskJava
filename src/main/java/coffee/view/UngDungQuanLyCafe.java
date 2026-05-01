@@ -28,6 +28,8 @@ import coffee.view.screens.ManHinhSanPham;
 import coffee.view.screens.ManHinhThongKe;
 import coffee.view.screens.ManHinhBan;
 import coffee.view.screens.ManHinhKhuyenMai;
+import coffee.view.screens.ManHinhTroLyAI;
+import coffee.controller.screens.DieuKhienTroLyAI;
 
 import javax.swing.*;
 import java.awt.*;
@@ -51,6 +53,7 @@ public class UngDungQuanLyCafe extends JFrame {
     private final JButton khuyenMaiButton = new ModernButton("Khuyến mãi", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
     private final JButton nhanVienButton = new ModernButton("Nhân viên", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
     private final JButton thongKeButton = new ModernButton("Thống kê", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
+    private final JButton aiButton = new ModernButton("Trợ lý AI", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
     private final JButton dangXuatButton = new ModernButton("Đăng xuất", ModernUITheme.DANGER_COLOR, Color.WHITE);
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private final Timer clockTimer = new Timer(1000, e -> updateClock());
@@ -66,6 +69,7 @@ public class UngDungQuanLyCafe extends JFrame {
     private final ManHinhDanhSachHoaDon invoiceView = new ManHinhDanhSachHoaDon();
     private final ManHinhKhuyenMai promotionView = new ManHinhKhuyenMai();
     private final ManHinhThongKe reportView = new ManHinhThongKe();
+    private final ManHinhTroLyAI aiView = new ManHinhTroLyAI();
 
     private final DieuKhienSanPham productController;
     private final DieuKhienBan tableController;
@@ -74,6 +78,7 @@ public class UngDungQuanLyCafe extends JFrame {
     private final DieuKhienDanhSachHoaDon invoiceController;
     private final DieuKhienKhuyenMai promotionController;
     private final DieuKhienThongKe reportController;
+    private final DieuKhienTroLyAI aiController;
 
     public UngDungQuanLyCafe() {
         applyModernTheme();
@@ -93,6 +98,7 @@ public class UngDungQuanLyCafe extends JFrame {
         this.paymentController = new DieuKhienHoaDon(controller, session, paymentView, this::refreshAll);
         this.invoiceController = new DieuKhienDanhSachHoaDon(controller, invoiceView);
         this.promotionController = new DieuKhienKhuyenMai(controller, promotionView);
+        this.aiController = new DieuKhienTroLyAI(controller, aiView);
         new DieuKhienDangNhap(controller, session, loginView, this::onLoginSuccess);
         initUI();
         refreshAll();
@@ -183,6 +189,7 @@ public class UngDungQuanLyCafe extends JFrame {
         contentPanel.add(promotionView, "KHUYEN_MAI");
         contentPanel.add(employeeView, "NHAN_VIEN");
         contentPanel.add(reportView, "THONG_KE");
+        contentPanel.add(aiView, "AI_ASSISTANT");
 
         workspace.add(contentPanel, BorderLayout.CENTER);
         return workspace;
@@ -211,6 +218,7 @@ public class UngDungQuanLyCafe extends JFrame {
         khuyenMaiButton.addActionListener(e -> showScreen("Khuyến mãi", "KHUYEN_MAI", khuyenMaiButton));
         nhanVienButton.addActionListener(e -> showScreen("Nhân viên", "NHAN_VIEN", nhanVienButton));
         thongKeButton.addActionListener(e -> showScreen("Thống kê", "THONG_KE", thongKeButton));
+        aiButton.addActionListener(e -> showScreen("Trợ lý AI", "AI_ASSISTANT", aiButton));
         dangXuatButton.addActionListener(e -> logout());
 
         sidebar.add(sanPhamButton);
@@ -220,6 +228,7 @@ public class UngDungQuanLyCafe extends JFrame {
         sidebar.add(khuyenMaiButton);
         sidebar.add(nhanVienButton);
         sidebar.add(thongKeButton);
+        sidebar.add(aiButton);
         sidebar.add(Box.createVerticalStrut(10));
         sidebar.add(dangXuatButton);
         return sidebar;
@@ -254,7 +263,7 @@ public class UngDungQuanLyCafe extends JFrame {
     }
 
     private void setActiveNav(JButton activeButton) {
-        JButton[] buttons = {sanPhamButton, banButton, thanhToanButton, hoaDonButton, khuyenMaiButton, nhanVienButton, thongKeButton};
+        JButton[] buttons = {sanPhamButton, banButton, thanhToanButton, hoaDonButton, khuyenMaiButton, nhanVienButton, thongKeButton, aiButton};
         for (JButton button : buttons) {
             Color targetColor = button == activeButton ? ModernUITheme.PRIMARY_COLOR : ModernUITheme.BG_TERTIARY;
             if (button instanceof ModernButton modernButton) {
