@@ -34,37 +34,51 @@ public class DieuKhienNhanVien {
                 (VaiTro) view.roleBox.getSelectedItem(),
                 view.usernameField.getText().trim(),
                 new String(view.passwordField.getPassword()),
-                view.emailField.getText().trim())
+                view.emailField.getText().trim()),
+            "Thêm nhân viên thành công"
         ));
         view.updateButton.addActionListener(e -> runAdminAction(() ->
                 appController.updateEmployee(
                         parseInt(view.idField.getText()),
-                view.fullNameField.getText().trim(),
-                parseInt(view.birthYearField.getText()),
-                parseDouble(view.salaryField.getText()),
-                view.layGioiTinhDaChon(),
-                normalizePath(view.avatarPathField.getText()),
+                        view.fullNameField.getText().trim(),
+                        parseInt(view.birthYearField.getText()),
+                        parseDouble(view.salaryField.getText()),
+                        view.layGioiTinhDaChon(),
+                        normalizePath(view.avatarPathField.getText()),
                         (VaiTro) view.roleBox.getSelectedItem(),
                         view.usernameField.getText().trim(),
-                new String(view.passwordField.getPassword()),
-                view.emailField.getText().trim())
+                        new String(view.passwordField.getPassword()),
+                        view.emailField.getText().trim()),
+                "Cập nhật nhân viên thành công"
         ));
         view.deleteButton.addActionListener(e -> runAdminAction(() ->
-                appController.deleteEmployee(parseInt(view.idField.getText()))
+                appController.deleteEmployee(parseInt(view.idField.getText())),
+                "Xóa nhân viên thành công"
         ));
         view.table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && view.table.getSelectedRow() >= 0) {
                 int row = view.table.getSelectedRow();
                 String formattedId = view.tableModel.getValueAt(row, 0).toString();
-                view.idField.setText(formattedId.replaceAll("[^0-9]", ""));
-            view.fullNameField.setText(view.tableModel.getValueAt(row, 1).toString());
-            view.birthYearField.setText(view.tableModel.getValueAt(row, 2).toString());
-            view.salaryField.setText(view.tableModel.getValueAt(row, 3).toString());
-            view.datGioiTinh(GioiTinh.valueOf(view.tableModel.getValueAt(row, 4).toString()));
-            view.roleBox.setSelectedItem(VaiTro.valueOf(view.tableModel.getValueAt(row, 5).toString()));
-            view.usernameField.setText(view.tableModel.getValueAt(row, 6).toString());
-            view.emailField.setText(view.tableModel.getValueAt(row, 7).toString());
-            view.capNhatXemTruocAnh(view.tableModel.getValueAt(row, 8).toString());
+                int employeeId = Integer.parseInt(formattedId.replaceAll("[^0-9]", ""));
+                view.idField.setText(String.valueOf(employeeId));
+                view.fullNameField.setText(view.tableModel.getValueAt(row, 1).toString());
+                view.birthYearField.setText(view.tableModel.getValueAt(row, 2).toString());
+                view.salaryField.setText(view.tableModel.getValueAt(row, 3).toString());
+                view.datGioiTinh(GioiTinh.valueOf(view.tableModel.getValueAt(row, 4).toString()));
+                view.roleBox.setSelectedItem(VaiTro.valueOf(view.tableModel.getValueAt(row, 5).toString()));
+                view.usernameField.setText(view.tableModel.getValueAt(row, 6).toString());
+                view.emailField.setText(view.tableModel.getValueAt(row, 7).toString());
+                view.capNhatXemTruocAnh(view.tableModel.getValueAt(row, 8).toString());
+
+                NhanVien selected = appController.getEmployees().stream()
+                        .filter(emp -> emp.getMa() == employeeId)
+                        .findFirst()
+                        .orElse(null);
+                if (selected != null) {
+                    view.passwordField.setText(selected.getMatKhau() == null ? "" : selected.getMatKhau());
+                } else {
+                    view.passwordField.setText("");
+                }
             }
         });
     }
@@ -86,7 +100,7 @@ public class DieuKhienNhanVien {
         }
     }
 
-    private void runAdminAction(Runnable action) {
+    private void runAdminAction(Runnable action, String successMessage) {
         if (session.getCurrentUser() == null || session.getCurrentUser().getVaiTro() != VaiTro.ADMIN) {
             JOptionPane.showMessageDialog(view, "Chỉ ADMIN mới có quyền quản lý nhân viên");
             return;
@@ -94,6 +108,7 @@ public class DieuKhienNhanVien {
         try {
             action.run();
             refresh();
+            JOptionPane.showMessageDialog(view, successMessage);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(view, ex.getMessage());
         }

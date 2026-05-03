@@ -12,7 +12,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
 public class ManHinhNhanVien extends JPanel {
-    // GIỮ NGUYÊN TẤT CẢ CÁC BIẾN CŨ
+    
     public final DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"Mã", "Họ tên", "Năm sinh", "Lương", "Giới tính", "Vai trò", "Username", "Email", "Ảnh"}, 0);
     public final JTable table = new JTable(tableModel);
     public final JTextField idField = new ModernTextField(15);
