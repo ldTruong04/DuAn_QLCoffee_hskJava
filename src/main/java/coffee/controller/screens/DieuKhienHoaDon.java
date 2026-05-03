@@ -7,6 +7,7 @@ import coffee.model.HoaDon;
 import coffee.model.KhuyenMai;
 import coffee.model.NhanVien;
 import coffee.model.SanPham;
+import coffee.util.PDFUtil;
 import coffee.view.screens.ManHinhHoaDon;
 
 import javax.swing.*;
@@ -39,7 +40,7 @@ public class DieuKhienHoaDon {
         view.bindStoreProductSelection();
         view.bindInvoiceTypeChange(this::onContextChanged);
         view.bindTableChange(this::onContextChanged);
-        view.bindTableStatusRefresh(this::onContextChanged);
+        view.bindTableStatusRefresh(this::refresh);
         view.bindCashInputChange(this::capNhatTienThoiTamTinh);
         view.bindPromotionSelection(this::onPromotionSelected);
         view.bindApplyPromotion(this::apDungKhuyenMaiTuNhapTay);
@@ -89,6 +90,7 @@ public class DieuKhienHoaDon {
                 throw new IllegalStateException("Tiền khách đưa chưa đủ để thanh toán");
             }
             long tienThoi = tienKhachDua - tongTien;
+            boolean exportBeforePayment = askToExportInvoice();
             if (!xacNhanThanhToan("tiền mặt", tongTien, tienKhachDua, tienThoi)) {
                 return;
             }
@@ -97,7 +99,7 @@ public class DieuKhienHoaDon {
             String invoiceText = appController.getInvoiceDetailText(invoiceIdToExport);
             saveInvoicePromotion(currentInvoiceId);
             appController.payInvoice(currentInvoiceId, "TIEN_MAT");
-            String exportPath = xuatHoaDonNeuCan(invoiceIdToExport, invoiceText, "TIEN_MAT", tongTien, tienKhachDua, tienThoi);
+            String exportPath = exportInvoiceIfRequested(invoiceIdToExport, invoiceText, "TIEN_MAT", tongTien, tienKhachDua, tienThoi, exportBeforePayment);
             JOptionPane.showMessageDialog(view, "Thanh toán thành công: " + String.format("%,.0f", (double) tongTien) + " VND");
             if (exportPath != null) {
                 JOptionPane.showMessageDialog(view, "Đã xuất hóa đơn: " + exportPath);
@@ -110,6 +112,7 @@ public class DieuKhienHoaDon {
                 throw new IllegalStateException("Chưa có hóa đơn để thanh toán");
             }
             long tongTien = view.getTongTienCanThu();
+            boolean exportBeforePayment = askToExportInvoice();
             if (!xacNhanThanhToan("chuyển khoản", tongTien, 0, 0)) {
                 return;
             }
@@ -118,7 +121,7 @@ public class DieuKhienHoaDon {
             String invoiceText = appController.getInvoiceDetailText(invoiceIdToExport);
             saveInvoicePromotion(currentInvoiceId);
             appController.payInvoice(currentInvoiceId, "CHUYEN_KHOAN");
-            String exportPath = xuatHoaDonNeuCan(invoiceIdToExport, invoiceText, "CHUYEN_KHOAN", tongTien, tongTien, 0);
+            String exportPath = exportInvoiceIfRequested(invoiceIdToExport, invoiceText, "CHUYEN_KHOAN", tongTien, tongTien, 0, exportBeforePayment);
             JOptionPane.showMessageDialog(view, "Thanh toán chuyển khoản thành công: " + String.format("%,.0f", (double) tongTien) + " VND");
             if (exportPath != null) {
                 JOptionPane.showMessageDialog(view, "Đã xuất hóa đơn: " + exportPath);
@@ -136,10 +139,11 @@ public class DieuKhienHoaDon {
             JScrollPane pane = new JScrollPane(area);
             pane.setPreferredSize(new java.awt.Dimension(540, 320));
             JOptionPane.showMessageDialog(view, pane, "Chi tiết hóa đơn", JOptionPane.INFORMATION_MESSAGE);
-            try {
-                area.print();
-            } catch (java.awt.print.PrinterException ex) {
-                throw new RuntimeException("Lỗi in tài liệu", ex);
+            String pdfPath = PDFUtil.exportTextToPdf(content, "hoa_don_" + currentInvoiceId + "_" + System.currentTimeMillis());
+            if (pdfPath != null) {
+                JOptionPane.showMessageDialog(view, "Đã xuất hóa đơn PDF: " + pdfPath);
+            } else {
+                throw new RuntimeException("Lỗi xuất PDF hóa đơn");
             }
         }));
     }
@@ -374,7 +378,7 @@ public class DieuKhienHoaDon {
                     .append("Tiền thối: ").append(String.format("%,.0f", (double) tienThoi)).append(" VND\n");
         }
         if (view.isExportInvoiceSelected()) {
-            message.append("Hệ thống sẽ xuất hóa đơn ra Desktop (.fdf).\n");
+            message.append("Hệ thống sẽ xuất hóa đơn ra Desktop (.pdf).\n");
         }
 
         int confirm = JOptionPane.showConfirmDialog(
@@ -387,46 +391,35 @@ public class DieuKhienHoaDon {
         return confirm == JOptionPane.YES_OPTION;
     }
 
-    private String xuatHoaDonNeuCan(int invoiceId,
-                                    String invoiceText,
-                                    String paymentMethod,
-                                    long tongTien,
-                                    long tienKhachDua,
-                                    long tienThoi) {
-        if (!view.isExportInvoiceSelected()) {
-            return null;
-        }
-        try {
-            Path desktopPath = Path.of(System.getProperty("user.home"), "Desktop");
-            String fileName = "hoa_don_" + invoiceId + "_" + System.currentTimeMillis() + ".fdf";
-            Path outputPath = desktopPath.resolve(fileName);
-
-            String fdfContent = "%FDF-1.2\n"
-                    + "1 0 obj\n<<\n/FDF << /Fields [\n"
-                    + "<< /T (invoice_id) /V (" + invoiceId + ") >>\n"
-                    + "<< /T (payment_method) /V (" + paymentMethod + ") >>\n"
-                    + "<< /T (total_paid) /V (" + tongTien + ") >>\n"
-                    + "<< /T (cash_received) /V (" + tienKhachDua + ") >>\n"
-                    + "<< /T (cash_change) /V (" + tienThoi + ") >>\n"
-                    + "<< /T (invoice_detail) /V (" + escapeFdfValue(invoiceText) + ") >>\n"
-                    + "] >>\n>>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n";
-
-            Files.writeString(outputPath, fdfContent, StandardCharsets.UTF_8);
-            return outputPath.toString();
-        } catch (IOException ex) {
-            throw new RuntimeException("Không thể xuất hóa đơn .fdf ra Desktop", ex);
-        }
+    private boolean askToExportInvoice() {
+        int confirm = JOptionPane.showConfirmDialog(
+                view,
+                "Bạn có muốn xuất hóa đơn ra PDF trước khi thanh toán?",
+                "Xuất hóa đơn",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+        return confirm == JOptionPane.YES_OPTION;
     }
 
-    private String escapeFdfValue(String value) {
-        if (value == null) {
-            return "";
+    private String exportInvoiceIfRequested(int invoiceId,
+                                           String invoiceText,
+                                           String paymentMethod,
+                                           long tongTien,
+                                           long tienKhachDua,
+                                           long tienThoi,
+                                           boolean requestExport) {
+        if (!requestExport && !view.isExportInvoiceSelected()) {
+            return null;
         }
-        return value
-                .replace("\\", "\\\\")
-                .replace("(", "\\(")
-                .replace(")", "\\)")
-                .replace("\n", "\\n");
+        StringBuilder exportText = new StringBuilder(invoiceText);
+        exportText.append("\n\nPhương thức thanh toán: ").append(paymentMethod.replace("TIEN_MAT", "Tiền mặt").replace("CHUYEN_KHOAN", "Chuyển khoản"));
+        exportText.append("\nTổng thanh toán: ").append(String.format("%,.0f", (double) tongTien)).append(" VND");
+        if (tienKhachDua > 0) {
+            exportText.append("\nKhách đưa: ").append(String.format("%,.0f", (double) tienKhachDua)).append(" VND");
+            exportText.append("\nTiền thối: ").append(String.format("%,.0f", (double) tienThoi)).append(" VND");
+        }
+        return PDFUtil.exportTextToPdf(exportText.toString(), "hoa_don_" + invoiceId + "_" + System.currentTimeMillis());
     }
 
     private void saveInvoicePromotion(int invoiceId) {

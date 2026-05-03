@@ -46,7 +46,7 @@ public class UngDungQuanLyCafe extends JFrame {
     private final JLabel currentUserLabel = new JLabel("Chưa đăng nhập");
     private final JLabel appTitleLabel = new JLabel("QL Coffee");
     private final JLabel dateTimeLabel = new JLabel();
-    private final JButton sanPhamButton = new ModernButton("Sản phẩm", ModernUITheme.PRIMARY_COLOR, Color.WHITE);
+    private final JButton sanPhamButton = new ModernButton("Sản phẩm", ModernUITheme.PRIMARY_COLOR, ModernUITheme.TEXT_PRIMARY);
     private final JButton banButton = new ModernButton("Bàn", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
     private final JButton thanhToanButton = new ModernButton("Thanh toán", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
     private final JButton hoaDonButton = new ModernButton("Hóa đơn", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
@@ -97,7 +97,7 @@ public class UngDungQuanLyCafe extends JFrame {
         this.reportController = new DieuKhienThongKe(controller, reportView);
         this.paymentController = new DieuKhienHoaDon(controller, session, paymentView, this::refreshAll);
         this.invoiceController = new DieuKhienDanhSachHoaDon(controller, invoiceView);
-        this.promotionController = new DieuKhienKhuyenMai(controller, promotionView);
+        this.promotionController = new DieuKhienKhuyenMai(controller, session, promotionView);
         this.aiController = new DieuKhienTroLyAI(controller, aiView);
         new DieuKhienDangNhap(controller, session, loginView, this::onLoginSuccess);
         initUI();
@@ -286,8 +286,10 @@ public class UngDungQuanLyCafe extends JFrame {
     private void showDefaultScreenForUser() {
         if (session.getCurrentUser() != null && session.getCurrentUser().getVaiTro() == coffee.model.VaiTro.ADMIN) {
             nhanVienButton.setEnabled(true);
+            khuyenMaiButton.setEnabled(true);
         } else {
             nhanVienButton.setEnabled(false);
+            khuyenMaiButton.setEnabled(false);
         }
         showScreen("Thống kê", "THONG_KE", thongKeButton);
     }

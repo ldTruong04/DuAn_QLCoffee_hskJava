@@ -58,7 +58,7 @@ public class ManHinhHoaDon extends JPanel {
     public final JLabel changeLabel = new JLabel("0 VND");
     public final JButton quickExactButton = new ModernButton("Đủ tiền", ModernUITheme.INFO_COLOR, ModernUITheme.TEXT_PRIMARY);
     public final JButton refreshButton = new ModernButton("", ModernUITheme.WARNING_COLOR, ModernUITheme.TEXT_PRIMARY);
-    public final JCheckBox exportInvoiceCheckBox = new JCheckBox("Xuất hóa đơn (.fdf)");
+    public final JCheckBox exportInvoiceCheckBox = new JCheckBox("Xuất hóa đơn (.pdf)");
     public final JTextField promotionCodeField = new ModernTextField(12);
     public final JComboBox<KhuyenMai> promotionComboBox = new JComboBox<>();
     public final JButton applyPromotionButton = new ModernButton("Áp dụng", ModernUITheme.SUCCESS_COLOR, ModernUITheme.TEXT_PRIMARY);
@@ -98,6 +98,7 @@ public class ManHinhHoaDon extends JPanel {
         exportInvoiceCheckBox.setSelected(false);
         exportInvoiceCheckBox.setFont(ModernUITheme.FONT_SMALL);
         exportInvoiceCheckBox.setForeground(ModernUITheme.TEXT_PRIMARY);
+        exportInvoiceCheckBox.setText("Xuất hóa đơn (.pdf)");
 
         promotionComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -165,28 +166,45 @@ public class ManHinhHoaDon extends JPanel {
         formPanel.add(tableSelectionWrap, gbc);
 
         gbc.gridx = 1; gbc.gridy = 1;
-        formPanel.add(createFieldLabel("Trạng thái bàn"), gbc);
+        
         gbc.gridx = 2;
         tableStatusValueLabel.setFont(ModernUITheme.FONT_SMALL);
         tableStatusValueLabel.setForeground(ModernUITheme.TEXT_SECONDARY);
         formPanel.add(tableStatusValueLabel, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2;
-        formPanel.add(createFieldLabel("Tên khách hàng"), gbc);
-        gbc.gridx = 1;
-        gbc.gridwidth = 2;
-        formPanel.add(customerNameField, gbc);
+        
 
-        gbc.gridwidth = 1;
-        gbc.gridx = 0; gbc.gridy = 2;
-        formPanel.add(createFieldLabel("Số điện thoại"), gbc);
-        gbc.gridx = 1;
-        gbc.gridwidth = 2;
-        formPanel.add(customerPhoneField, gbc);
+gbc.gridy = 2;
+gbc.weightx = 0.5;
+gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1;
-        employeeNameLabel.setFont(ModernUITheme.FONT_SMALL);
-        formPanel.add(employeeNameLabel, gbc);
+// ===== LEFT: TÊN KH =====
+gbc.gridx = 0;
+
+JPanel namePanel = new JPanel(new BorderLayout(5, 5));
+namePanel.setOpaque(false);
+
+namePanel.add(createFieldLabel("Tên khách hàng"), BorderLayout.NORTH);
+
+customerNameField.setPreferredSize(new Dimension(250, 30));
+namePanel.add(customerNameField, BorderLayout.CENTER);
+
+formPanel.add(namePanel, gbc);
+
+// ===== RIGHT: SĐT =====
+gbc.gridx = 1;
+
+JPanel phonePanel = new JPanel(new BorderLayout(5, 5));
+phonePanel.setOpaque(false);
+
+phonePanel.add(createFieldLabel("Số điện thoại"), BorderLayout.NORTH);
+
+customerPhoneField.setPreferredSize(new Dimension(250, 30));
+phonePanel.add(customerPhoneField, BorderLayout.CENTER);
+
+formPanel.add(phonePanel, gbc);
+        
+
 
         gbc.gridx = 1;
         invoiceInfoLabel.setFont(ModernUITheme.FONT_SMALL);

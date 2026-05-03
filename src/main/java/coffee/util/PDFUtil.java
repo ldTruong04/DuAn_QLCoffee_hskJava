@@ -78,6 +78,37 @@ public class PDFUtil {
         table.addCell(cell2);
     }
     
+    public static String exportTextToPdf(String text, String fileBaseName) {
+        try {
+            String desktopPath = System.getProperty("user.home") + File.separator + "Desktop";
+            File dir = new File(desktopPath, "HoaDon");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            String filename = fileBaseName + ".pdf";
+            File pdfFile = new File(dir, filename);
+
+            Document document = new Document(PageSize.A4);
+            PdfWriter.getInstance(document, new FileOutputStream(pdfFile));
+            document.open();
+
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD);
+            Font normalFont = new Font(Font.FontFamily.HELVETICA, 12, Font.NORMAL);
+            document.add(new Paragraph("HÓA ĐƠN", titleFont));
+            document.add(new Paragraph(" ", normalFont));
+
+            for (String line : text.split("\\r?\\n")) {
+                document.add(new Paragraph(line, normalFont));
+            }
+
+            document.close();
+            return pdfFile.getAbsolutePath();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public static String removeAccent(String s) {
         String temp = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD);
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\p{InCombiningDiacriticalMarks}+");

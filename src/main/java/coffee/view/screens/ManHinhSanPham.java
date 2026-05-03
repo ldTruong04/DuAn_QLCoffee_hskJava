@@ -35,6 +35,7 @@ public class ManHinhSanPham extends JPanel {
         }
     };
     public final JTable kitchenOrderTable = new JTable(kitchenOrderTableModel);
+    public final JButton refreshKitchenOrdersButton = new ModernButton("Làm mới", ModernUITheme.INFO_COLOR, ModernUITheme.TEXT_PRIMARY);
     public final JButton completeOrderButton = new ModernButton("Hoàn thành", ModernUITheme.SUCCESS_COLOR, Color.WHITE);
     public final JButton cancelOrderButton = new ModernButton("Hủy bỏ", ModernUITheme.DANGER_COLOR, Color.WHITE);
 
@@ -76,7 +77,13 @@ public class ManHinhSanPham extends JPanel {
         JLabel title = new JLabel("DANH SÁCH MÓN ĐANG CHỜ CHẾ BIẾN");
         title.setFont(new Font("Segoe UI", Font.BOLD, 16));
         title.setForeground(ModernUITheme.PRIMARY_DARK);
-        panel.add(title, BorderLayout.NORTH);
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+        header.add(title, BorderLayout.WEST);
+        refreshKitchenOrdersButton.setPreferredSize(new Dimension(110, 34));
+        header.add(refreshKitchenOrdersButton, BorderLayout.EAST);
+        panel.add(header, BorderLayout.NORTH);
 
         kitchenOrderTable.setFillsViewportHeight(true);
         ModernStyler.styleTable(kitchenOrderTable);

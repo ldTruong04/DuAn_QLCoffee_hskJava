@@ -43,8 +43,8 @@ public class ManHinhNhanVien extends JPanel {
     }
 
     private JPanel buildSplitCard() {
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, buildDetailCard(), buildTableCard());
-        splitPane.setResizeWeight(0.5);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, buildDetailCard(), buildTableCard());
+        splitPane.setResizeWeight(0.6);
         splitPane.setContinuousLayout(true);
         splitPane.setBorder(null);
         splitPane.setDividerSize(6);

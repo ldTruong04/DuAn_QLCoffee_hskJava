@@ -42,6 +42,7 @@ public class ManHinhKhuyenMai extends JPanel {
         add(buildTableCard(), BorderLayout.CENTER);
 
         idField.setEditable(false);
+        idField.setVisible(false);
         loaiBox.setFont(ModernUITheme.FONT_SMALL);
         activeBox.setOpaque(false);
         activeBox.setFont(ModernUITheme.FONT_SMALL);
@@ -70,13 +71,12 @@ public class ManHinhKhuyenMai extends JPanel {
 
         gbc.gridx = 0;
         gbc.gridy = 0;
-        addInput(form, "Mã", idField, gbc);
-
-        gbc.gridx = 1;
+        gbc.gridwidth = 2;
         addInput(form, "Code khuyến mãi", codeField, gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
+        gbc.gridwidth = 1;
         addInput(form, "Loại giảm", loaiBox, gbc);
 
         gbc.gridx = 1;

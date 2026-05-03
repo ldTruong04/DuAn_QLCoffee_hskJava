@@ -82,6 +82,8 @@ public class DieuKhienSanPham {
             appController.removeInvoiceItem(item.getInvoiceId(), item.getProductId());
             JOptionPane.showMessageDialog(view, "Đã hủy món và gỡ khỏi hóa đơn thành công!");
         }));
+
+        view.refreshKitchenOrdersButton.addActionListener(e -> runAction(this::refresh));
     }
 
     public void refresh() {

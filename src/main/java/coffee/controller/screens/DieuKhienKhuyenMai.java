@@ -1,23 +1,27 @@
 package coffee.controller.screens;
 
 import coffee.controller.DieuKhienUngDung;
+import coffee.controller.PhienUngDung;
 import coffee.model.KhuyenMai;
+import coffee.model.VaiTro;
 import coffee.view.screens.ManHinhKhuyenMai;
 
 import javax.swing.*;
 
 public class DieuKhienKhuyenMai {
     private final DieuKhienUngDung appController;
+    private final PhienUngDung session;
     private final ManHinhKhuyenMai view;
 
-    public DieuKhienKhuyenMai(DieuKhienUngDung appController, ManHinhKhuyenMai view) {
+    public DieuKhienKhuyenMai(DieuKhienUngDung appController, PhienUngDung session, ManHinhKhuyenMai view) {
         this.appController = appController;
+        this.session = session;
         this.view = view;
         bind();
     }
 
     private void bind() {
-        view.addButton.addActionListener(e -> runAction(() ->
+        view.addButton.addActionListener(e -> runAdminAction(() ->
                 appController.addPromotion(
                         view.codeField.getText().trim(),
                         view.loaiBox.getSelectedIndex() == 0,
@@ -26,7 +30,7 @@ public class DieuKhienKhuyenMai {
                 )
         ));
 
-        view.updateButton.addActionListener(e -> runAction(() ->
+        view.updateButton.addActionListener(e -> runAdminAction(() ->
                 appController.updatePromotion(
                         parseInt(view.idField.getText()),
                         view.codeField.getText().trim(),
@@ -36,7 +40,7 @@ public class DieuKhienKhuyenMai {
                 )
         ));
 
-        view.deleteButton.addActionListener(e -> runAction(() ->
+        view.deleteButton.addActionListener(e -> runAdminAction(() ->
                 appController.deletePromotion(parseInt(view.idField.getText()))
         ));
 
@@ -70,6 +74,20 @@ public class DieuKhienKhuyenMai {
     }
 
     private void runAction(Runnable action) {
+        try {
+            action.run();
+            refresh();
+            view.clearForm();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(view, ex.getMessage());
+        }
+    }
+
+    private void runAdminAction(Runnable action) {
+        if (session.getCurrentUser() == null || session.getCurrentUser().getVaiTro() != VaiTro.ADMIN) {
+            JOptionPane.showMessageDialog(view, "Chỉ ADMIN mới có quyền quản lý khuyến mãi");
+            return;
+        }
         try {
             action.run();
             refresh();
