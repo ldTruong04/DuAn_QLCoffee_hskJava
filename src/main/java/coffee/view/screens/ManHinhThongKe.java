@@ -8,7 +8,7 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
-
+import com.toedter.calendar.JDateChooser;
 public class ManHinhThongKe extends JPanel {
     public final JLabel doanhThuValueLabel = new JLabel("0 VND");
     public final JLabel soHoaDonValueLabel = new JLabel("0");
@@ -19,6 +19,7 @@ public class ManHinhThongKe extends JPanel {
     public final JTextField fromDateField = new ModernTextField(8);
     public final JTextField toDateField = new ModernTextField(8);
     public final JTextField shiftDateField = new ModernTextField(8);
+    public final JButton chooseShiftDateButton = new ModernButton("Chọn ngày khác", ModernUITheme.INFO_COLOR, ModernUITheme.TEXT_PRIMARY);
     public final JButton applyFilterButton = new ModernButton("Áp dụng", ModernUITheme.INFO_COLOR, ModernUITheme.TEXT_PRIMARY);
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -45,6 +46,7 @@ public class ManHinhThongKe extends JPanel {
     public final DoanhThuBieuDoPanel bieuDoTheoNgayPanel = new DoanhThuBieuDoPanel("Doanh thu theo ngày (7 ngày gần nhất)");
     public final DoanhThuBieuDoPanel bieuDoTheoThangPanel = new DoanhThuBieuDoPanel("Doanh thu theo tháng (6 tháng gần nhất)");
     public final DoanhThuBieuDoPanel bieuDoTheoCaPanel = new DoanhThuBieuDoPanel("Doanh thu theo ca");
+    public final JTabbedPane chartTabs = new JTabbedPane();
 
     public final JButton refreshButton = new ModernButton("Làm mới thống kê", ModernUITheme.PRIMARY_COLOR, ModernUITheme.TEXT_PRIMARY);
 
@@ -89,104 +91,112 @@ public class ManHinhThongKe extends JPanel {
     }
 
     private JPanel buildFilterPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 4));
+        JPanel panel = new JPanel(new BorderLayout(12, 4));
         panel.setOpaque(false);
+
+        // Left panel: Date range (Từ ngày - Đến ngày)
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 4));
+        leftPanel.setOpaque(false);
 
         JLabel fromLabel = new JLabel("Từ ngày:");
         fromLabel.setFont(ModernUITheme.FONT_SMALL);
         fromLabel.setForeground(ModernUITheme.TEXT_SECONDARY);
-        panel.add(fromLabel);
+        leftPanel.add(fromLabel);
 
         fromDateField.setText(LocalDate.now().minusDays(6).format(dateFormatter));
         fromDateField.setEditable(false);
         fromDateField.setPreferredSize(new Dimension(100, 28));
-        panel.add(fromDateField);
+        leftPanel.add(fromDateField);
 
         JButton fromDateBtn = new JButton("📅");
         fromDateBtn.setFont(new Font("Arial", Font.PLAIN, 14));
         fromDateBtn.setPreferredSize(new Dimension(32, 28));
         fromDateBtn.addActionListener(e -> showDatePicker(fromDateField));
-        panel.add(fromDateBtn);
+        leftPanel.add(fromDateBtn);
 
         JLabel toLabel = new JLabel("Đến ngày:");
         toLabel.setFont(ModernUITheme.FONT_SMALL);
         toLabel.setForeground(ModernUITheme.TEXT_SECONDARY);
-        panel.add(toLabel);
+        leftPanel.add(toLabel);
 
         toDateField.setText(LocalDate.now().format(dateFormatter));
         toDateField.setEditable(false);
         toDateField.setPreferredSize(new Dimension(100, 28));
-        panel.add(toDateField);
+        leftPanel.add(toDateField);
 
         JButton toDateBtn = new JButton("📅");
         toDateBtn.setFont(new Font("Arial", Font.PLAIN, 14));
         toDateBtn.setPreferredSize(new Dimension(32, 28));
         toDateBtn.addActionListener(e -> showDatePicker(toDateField));
-        panel.add(toDateBtn);
+        leftPanel.add(toDateBtn);
+
+        panel.add(leftPanel, BorderLayout.WEST);
+
+        // Right panel: Shift date and apply button
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 4));
+        rightPanel.setOpaque(false);
 
         JLabel shiftLabel = new JLabel("Ngày ca:");
         shiftLabel.setFont(ModernUITheme.FONT_SMALL);
         shiftLabel.setForeground(ModernUITheme.TEXT_SECONDARY);
-        panel.add(shiftLabel);
+        rightPanel.add(shiftLabel);
 
         shiftDateField.setText(LocalDate.now().format(dateFormatter));
         shiftDateField.setEditable(false);
         shiftDateField.setPreferredSize(new Dimension(100, 28));
-        panel.add(shiftDateField);
+        rightPanel.add(shiftDateField);
+
+        chooseShiftDateButton.setPreferredSize(new Dimension(140, 28));
+        chooseShiftDateButton.addActionListener(e -> showDatePicker(shiftDateField));
+        rightPanel.add(chooseShiftDateButton);
 
         JButton shiftDateBtn = new JButton("📅");
         shiftDateBtn.setFont(new Font("Arial", Font.PLAIN, 14));
         shiftDateBtn.setPreferredSize(new Dimension(32, 28));
         shiftDateBtn.addActionListener(e -> showDatePicker(shiftDateField));
-        panel.add(shiftDateBtn);
+        rightPanel.add(shiftDateBtn);
 
         applyFilterButton.setPreferredSize(new Dimension(100, 28));
-        panel.add(applyFilterButton);
+        rightPanel.add(applyFilterButton);
+
+        panel.add(rightPanel, BorderLayout.EAST);
 
         return panel;
     }
 
-    private void showDatePicker(JTextField targetField) {
-        JPanel datePanel = new JPanel(new BorderLayout(8, 8));
-        datePanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        datePanel.setBackground(ModernUITheme.BG_PRIMARY);
+    
 
-        SpinnerDateModel dateModel = new SpinnerDateModel();
-        Calendar cal = Calendar.getInstance();
-        try {
-            LocalDate date = LocalDate.parse(targetField.getText(), dateFormatter);
-            cal.set(date.getYear(), date.getMonthValue() - 1, date.getDayOfMonth());
-        } catch (Exception ex) {
-            // Use current date if parsing fails
-        }
-        dateModel.setValue(cal.getTime());
+public void showDatePicker(JTextField targetField) {
+    JDateChooser dateChooser = new JDateChooser();
+    dateChooser.setDateFormatString("dd/MM/yyyy");
 
-        JSpinner dateSpinner = new JSpinner(dateModel);
-        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "dd/MM/yyyy");
-        dateSpinner.setEditor(dateEditor);
+    // set ngày hiện tại nếu có
+    try {
+        LocalDate date = LocalDate.parse(targetField.getText(), dateFormatter);
+        dateChooser.setDate(java.sql.Date.valueOf(date));
+    } catch (Exception e) {
+        dateChooser.setDate(new java.util.Date());
+    }
 
-        datePanel.add(new JLabel("Chọn ngày:"), BorderLayout.NORTH);
-        datePanel.add(dateSpinner, BorderLayout.CENTER);
+    int option = JOptionPane.showConfirmDialog(
+            SwingUtilities.getWindowAncestor(this),
+            dateChooser,
+            "Chọn ngày",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
 
-        int option = JOptionPane.showConfirmDialog(
-                SwingUtilities.getWindowAncestor(this),
-                datePanel,
-                "Chọn ngày",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
-        );
+    if (option == JOptionPane.OK_OPTION) {
+        java.util.Date selectedDate = dateChooser.getDate();
+        if (selectedDate != null) {
+            LocalDate localDate = selectedDate.toInstant()
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate();
 
-        if (option == JOptionPane.OK_OPTION) {
-            Calendar selectedCal = Calendar.getInstance();
-            selectedCal.setTime((java.util.Date) dateModel.getValue());
-            LocalDate selectedDate = LocalDate.of(
-                    selectedCal.get(Calendar.YEAR),
-                    selectedCal.get(Calendar.MONTH) + 1,
-                    selectedCal.get(Calendar.DAY_OF_MONTH)
-            );
-            targetField.setText(selectedDate.format(dateFormatter));
+            targetField.setText(localDate.format(dateFormatter));
         }
     }
+}
 
     private JPanel buildContent() {
         JPanel content = new JPanel(new BorderLayout(0, ModernUITheme.PADDING_MD));
@@ -199,7 +209,6 @@ public class ManHinhThongKe extends JPanel {
         kpiPanel.add(createKpiCard("Đã thanh toán", hoaDonDaThanhToanValueLabel));
         kpiPanel.add(createKpiCard("Trung bình/đơn", giaTriTrungBinhValueLabel));
 
-        JTabbedPane chartTabs = new JTabbedPane();
         chartTabs.setFont(ModernUITheme.FONT_SMALL);
         chartTabs.addTab("Theo ngày", bieuDoTheoNgayPanel);
         chartTabs.addTab("Theo tháng", bieuDoTheoThangPanel);

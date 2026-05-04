@@ -21,10 +21,10 @@ public class GeminiService {
 
     public static String askGemini(String prompt) throws Exception {
 
-        String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=" + API_KEY;
-
+        String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + API_KEY;
         URL url = new URL(endpoint);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        HttpURLConnection conn = (HttpURLConnection)
+                url.openConnection();
 
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -48,9 +48,13 @@ public class GeminiService {
             os.write(jsonInput.getBytes("UTF-8"));
         }
 
-        BufferedReader br = new BufferedReader(
-            new InputStreamReader(conn.getInputStream())
-        );
+        BufferedReader br;
+
+        if (conn.getResponseCode() >= 400) {
+            br = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+        } else {
+            br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        }
 
         StringBuilder response = new StringBuilder();
         String line;

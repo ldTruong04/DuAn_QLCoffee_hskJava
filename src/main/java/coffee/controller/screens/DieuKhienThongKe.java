@@ -25,6 +25,25 @@ public class DieuKhienThongKe {
         this.view = view;
         this.view.refreshButton.addActionListener(e -> refresh());
         this.view.applyFilterButton.addActionListener(e -> refresh());
+        this.view.chooseShiftDateButton.addActionListener(e -> {
+            view.showDatePicker(view.shiftDateField);
+            LocalDate shiftDate = parseDate(view.shiftDateField.getText());
+            if (shiftDate != null) {
+                refresh();
+            }
+        });
+        this.view.chartTabs.addChangeListener(e -> {
+            boolean isShiftTab = view.chartTabs.getSelectedComponent() == view.bieuDoTheoCaPanel;
+
+            if (isShiftTab) {
+                LocalDate today = LocalDate.now();
+                view.shiftDateField.setText(today.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                refresh();
+            }
+
+            view.shiftDateField.setEnabled(isShiftTab);
+            view.chooseShiftDateButton.setEnabled(isShiftTab);
+        });
     }
 
     public void refresh() {
