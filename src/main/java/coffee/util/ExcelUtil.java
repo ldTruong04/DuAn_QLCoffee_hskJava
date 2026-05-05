@@ -43,7 +43,7 @@ public class ExcelUtil {
             
             // Write invoice data
             for (HoaDon invoice : invoices) {
-                String line = String.format("\"%s\",\"Khách lẻ\",\"%s\",\"%.0f\",\"%.0f\",\"%s\",\"%s\"",
+                String line = String.format("\"%s\",\"Khách lẻ\",\"%s\",\"%.0f\",\"%d\",\"%s\",\"%s\"",
                         String.format("HD%03d", invoice.getMa()),
                         escapeCSV(invoice.getNhanVien().getHoTen()),
                         invoice.getTongTien(),

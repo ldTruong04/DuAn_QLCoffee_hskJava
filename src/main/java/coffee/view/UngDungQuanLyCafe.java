@@ -18,7 +18,6 @@ import coffee.dao.SanPhamRepository;
 import coffee.dao.BanRepository;
 import coffee.model.NhanVien;
 import coffee.service.DichVuCafe;
-import coffee.util.ModernButton;
 import coffee.util.ModernUITheme;
 import coffee.view.screens.ManHinhNhanVien;
 import coffee.view.screens.ManHinhHoaDon;
@@ -46,15 +45,15 @@ public class UngDungQuanLyCafe extends JFrame {
     private final JLabel currentUserLabel = new JLabel("Chưa đăng nhập");
     private final JLabel appTitleLabel = new JLabel("QL Coffee");
     private final JLabel dateTimeLabel = new JLabel();
-    private final JButton sanPhamButton = new ModernButton("Sản phẩm", ModernUITheme.PRIMARY_COLOR, ModernUITheme.TEXT_PRIMARY);
-    private final JButton banButton = new ModernButton("Bàn", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
-    private final JButton thanhToanButton = new ModernButton("Thanh toán", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
-    private final JButton hoaDonButton = new ModernButton("Hóa đơn", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
-    private final JButton khuyenMaiButton = new ModernButton("Khuyến mãi", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
-    private final JButton nhanVienButton = new ModernButton("Nhân viên", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
-    private final JButton thongKeButton = new ModernButton("Thống kê", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
-    private final JButton aiButton = new ModernButton("Trợ lý AI", ModernUITheme.BG_SECONDARY, ModernUITheme.TEXT_PRIMARY);
-    private final JButton dangXuatButton = new ModernButton("Đăng xuất", ModernUITheme.DANGER_COLOR, Color.WHITE);
+    private final JButton sanPhamButton = new JButton("Sản phẩm");
+    private final JButton banButton = new JButton("Bàn");
+    private final JButton thanhToanButton = new JButton("Thanh toán");
+    private final JButton hoaDonButton = new JButton("Hóa đơn");
+    private final JButton khuyenMaiButton = new JButton("Khuyến mãi");
+    private final JButton nhanVienButton = new JButton("Nhân viên");
+    private final JButton thongKeButton = new JButton("Thống kê");
+    private final JButton aiButton = new JButton("Trợ lý AI");
+    private final JButton dangXuatButton = new JButton("Đăng xuất");
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private final Timer clockTimer = new Timer(1000, e -> updateClock());
 
@@ -200,16 +199,13 @@ public class UngDungQuanLyCafe extends JFrame {
         sidebar.setBackground(ModernUITheme.BG_SECONDARY);
         sidebar.setBorder(BorderFactory.createEmptyBorder(ModernUITheme.PADDING_LG, ModernUITheme.PADDING_LG,
                 ModernUITheme.PADDING_LG, ModernUITheme.PADDING_LG));
-        sidebar.setLayout(new GridLayout(0, 1, ModernUITheme.PADDING_MD, ModernUITheme.PADDING_MD));
+        sidebar.setLayout(new GridLayout(0, 1, 0, 0));
         sidebar.setPreferredSize(new Dimension(210, 0));
 
-        styleNavButton(sanPhamButton);
-        styleNavButton(banButton);
-        styleNavButton(thanhToanButton);
-        styleNavButton(hoaDonButton);
-        styleNavButton(khuyenMaiButton);
-        styleNavButton(nhanVienButton);
-        styleNavButton(thongKeButton);
+        JButton[] navButtons = {sanPhamButton, banButton, thanhToanButton, hoaDonButton, khuyenMaiButton, nhanVienButton, thongKeButton, aiButton, dangXuatButton};
+        for (JButton btn : navButtons) {
+            btn.setBorder(BorderFactory.createLineBorder(Color.GRAY)); // Make buttons square, no rounded corners
+        }
 
         sanPhamButton.addActionListener(e -> showScreen("Sản phẩm", "SAN_PHAM", sanPhamButton));
         banButton.addActionListener(e -> showScreen("Bàn", "BAN", banButton));
@@ -252,10 +248,6 @@ public class UngDungQuanLyCafe extends JFrame {
         return statusBar;
     }
 
-    private void styleNavButton(JButton button) {
-        button.setPreferredSize(new Dimension(180, 42));
-    }
-
     private void showScreen(String title, String cardKey, JButton activeButton) {
         currentScreenLabel.setText(title);
         contentLayout.show(contentPanel, cardKey);
@@ -265,14 +257,10 @@ public class UngDungQuanLyCafe extends JFrame {
     private void setActiveNav(JButton activeButton) {
         JButton[] buttons = {sanPhamButton, banButton, thanhToanButton, hoaDonButton, khuyenMaiButton, nhanVienButton, thongKeButton, aiButton};
         for (JButton button : buttons) {
-            Color targetColor = button == activeButton ? ModernUITheme.PRIMARY_COLOR : ModernUITheme.BG_TERTIARY;
-            if (button instanceof ModernButton modernButton) {
-                modernButton.setBaseColor(targetColor);
-            } else {
-                button.setBackground(targetColor);
-            }
             if (button == activeButton) {
-                button.setForeground(ModernUITheme.TEXT_PRIMARY);
+                button.setFont(button.getFont().deriveFont(Font.BOLD));
+            } else {
+                button.setFont(button.getFont().deriveFont(Font.PLAIN));
             }
         }
     }

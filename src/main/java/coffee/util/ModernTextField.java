@@ -25,7 +25,7 @@ public class ModernTextField extends JTextField {
         this.padding = padding;
 
         setFont(ModernUITheme.FONT_BODY);
-        setBackground(ModernUITheme.BG_TERTIARY);
+        setBackground(ModernUITheme.BG_PRIMARY);
         setForeground(ModernUITheme.TEXT_PRIMARY);
         setCaretColor(ModernUITheme.PRIMARY_COLOR);
         setBorder(new RoundedBorder(borderRadius, padding));
@@ -53,8 +53,8 @@ public class ModernTextField extends JTextField {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         // Draw background
-        g2d.setColor(ModernUITheme.BG_TERTIARY);
-        g2d.fillRoundRect(0, 0, getWidth(), getHeight(), borderRadius, borderRadius);
+        g2d.setColor(getBackground());
+        g2d.fillRect(0, 0, getWidth(), getHeight());
 
         // Draw border
         if (isFocused) {
@@ -64,7 +64,7 @@ public class ModernTextField extends JTextField {
             g2d.setColor(ModernUITheme.BORDER_COLOR);
             g2d.setStroke(new BasicStroke(1));
         }
-        g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, borderRadius, borderRadius);
+        g2d.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
 
         super.paintComponent(g);
     }

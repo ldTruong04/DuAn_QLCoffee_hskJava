@@ -13,21 +13,7 @@ public class ModernStyler {
      * Apply modern styling to a JTable
      */
     public static void styleTable(JTable table) {
-        // Table styling
-        table.setBackground(ModernUITheme.BG_TERTIARY);
-        table.setForeground(ModernUITheme.TEXT_PRIMARY);
-        table.setGridColor(ModernUITheme.BORDER_COLOR);
-        table.setRowHeight(32);
-        table.setFont(ModernUITheme.FONT_BODY);
-        table.setSelectionBackground(ModernUITheme.PRIMARY_COLOR);
-        table.setSelectionForeground(ModernUITheme.TEXT_PRIMARY);
-
-        // Header styling
-        JTableHeader header = table.getTableHeader();
-        header.setBackground(ModernUITheme.BG_SECONDARY);
-        header.setForeground(ModernUITheme.TEXT_PRIMARY);
-        header.setFont(ModernUITheme.FONT_SUBHEADING);
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, ModernUITheme.PRIMARY_COLOR));
+        // Removed all styling to leave table in default format
     }
 
     /**
@@ -42,14 +28,7 @@ public class ModernStyler {
      * Apply modern styling to a JScrollPane
      */
     public static void styleScrollPane(JScrollPane scrollPane) {
-        JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
-        JScrollBar horizontalScrollBar = scrollPane.getHorizontalScrollBar();
-        
-        verticalScrollBar.setBackground(ModernUITheme.BG_SECONDARY);
-        horizontalScrollBar.setBackground(ModernUITheme.BG_SECONDARY);
-        
-        // Style scroll bar UI
-        scrollPane.getViewport().setBackground(ModernUITheme.BG_TERTIARY);
+        // Removed all styling to leave scrollPane in default format
     }
 
     /**
