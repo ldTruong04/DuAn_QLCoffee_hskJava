@@ -1,8 +1,10 @@
 package coffee.controller.screens;
 
 import coffee.controller.DieuKhienUngDung;
+import coffee.controller.PhienUngDung;
 import coffee.model.SanPham;
 import coffee.model.MonOrderBep;
+import coffee.model.VaiTro;
 import coffee.util.PDFUtil;
 import coffee.view.screens.ManHinhSanPham;
 
@@ -10,37 +12,49 @@ import javax.swing.*;
 
 public class DieuKhienSanPham {
     private final DieuKhienUngDung appController;
+    private final PhienUngDung session;
     private final ManHinhSanPham view;
 
-    public DieuKhienSanPham(DieuKhienUngDung appController, ManHinhSanPham view) {
+    public DieuKhienSanPham(DieuKhienUngDung appController, PhienUngDung session, ManHinhSanPham view) {
         this.appController = appController;
+        this.session = session;
         this.view = view;
         bind();
     }
 
     private void bind() {
-        view.addButton.addActionListener(e -> runAction(() ->
-                appController.addProduct(
-                        view.nameField.getText().trim(),
-                        view.categoryField.getText().trim(),
-                        parseDouble(view.priceField.getText()),
-                        view.descriptionArea.getText().trim(),
-                        normalizePath(view.imagePathField.getText())
-                )
-        ));
-        view.updateButton.addActionListener(e -> runAction(() ->
-                appController.updateProduct(
-                        parseInt(view.idField.getText()),
-                        view.nameField.getText().trim(),
-                        view.categoryField.getText().trim(),
-                        parseDouble(view.priceField.getText()),
-                        view.descriptionArea.getText().trim(),
-                        normalizePath(view.imagePathField.getText())
-                )
-        ));
+        view.addButton.addActionListener(e -> runAction(() -> {
+            String productName = view.nameField.getText().trim();
+            if (isDuplicateProductName(productName, -1)) {
+                throw new IllegalArgumentException("Tên sản phẩm '" + productName + "' đã tồn tại. Vui lòng chọn tên khác.");
+            }
+            appController.addProduct(
+                    productName,
+                    view.categoryField.getText().trim(),
+                    parseDouble(view.priceField.getText()),
+                    view.descriptionArea.getText().trim(),
+                    normalizePath(view.imagePathField.getText())
+            );
+        }));
+        view.updateButton.addActionListener(e -> runAction(() -> {
+            int productId = parseInt(view.idField.getText());
+            String productName = view.nameField.getText().trim();
+            if (isDuplicateProductName(productName, productId)) {
+                throw new IllegalArgumentException("Tên sản phẩm '" + productName + "' đã được sử dụng bởi sản phẩm khác.");
+            }
+            appController.updateProduct(
+                    productId,
+                    productName,
+                    view.categoryField.getText().trim(),
+                    parseDouble(view.priceField.getText()),
+                    view.descriptionArea.getText().trim(),
+                    normalizePath(view.imagePathField.getText())
+            );
+        }));
         view.deleteButton.addActionListener(e -> runAction(() ->
                 appController.deleteProduct(parseInt(view.idField.getText()))
         ));
+        view.clearButton.addActionListener(e -> view.clearFormFields());
         view.browseImageButton.addActionListener(e -> chooseImageFile());
         view.table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && view.table.getSelectedRow() >= 0) {
@@ -109,7 +123,8 @@ public class DieuKhienSanPham {
                     item.getTenBan(),
                     item.getTenMon(),
                     item.getSoLuong(),
-                    "Chờ chế biến"
+                    item.getTrangThai() == null || item.getTrangThai().isBlank() ? "Chờ chế biến" : item.getTrangThai(),
+                    item.getGhiChu() == null ? "" : item.getGhiChu()
             });
         }
         
@@ -118,6 +133,21 @@ public class DieuKhienSanPham {
             view.tabbedPane.setTitleAt(1, "Đơn hàng Bếp (" + pendingCount + ")");
         } else {
             view.tabbedPane.setTitleAt(1, "Đơn hàng Bếp");
+        }
+
+        // Check admin permissions
+        boolean isAdmin = session.getCurrentUser() != null && session.getCurrentUser().getVaiTro() == VaiTro.ADMIN;
+        view.addButton.setEnabled(isAdmin);
+        view.updateButton.setEnabled(isAdmin);
+        view.deleteButton.setEnabled(isAdmin);
+        view.browseImageButton.setEnabled(isAdmin);
+        view.clearButton.setEnabled(isAdmin);
+
+        // Hide image column
+        if (view.table.getColumnCount() > 5) {
+            view.table.getColumnModel().getColumn(5).setMinWidth(0);
+            view.table.getColumnModel().getColumn(5).setMaxWidth(0);
+            view.table.getColumnModel().getColumn(5).setPreferredWidth(0);
         }
     }
 
@@ -128,6 +158,16 @@ public class DieuKhienSanPham {
         if (result == JFileChooser.APPROVE_OPTION) {
             view.capNhatXemTruocAnh(chooser.getSelectedFile().getAbsolutePath());
         }
+    }
+
+    private boolean isDuplicateProductName(String productName, int excludeProductId) {
+        java.util.List<SanPham> products = appController.getProducts();
+        for (SanPham product : products) {
+            if (product.getTen().trim().equalsIgnoreCase(productName.trim()) && product.getMa() != excludeProductId) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void runAction(Runnable action) {

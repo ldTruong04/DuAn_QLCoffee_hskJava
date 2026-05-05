@@ -90,6 +90,10 @@ public class DieuKhienUngDung {
         service.updateInvoiceItemQuantity(invoiceId, productId, quantity);
     }
 
+    public void updateInvoiceItemNote(int invoiceId, int productId, String note) {
+        service.updateInvoiceItemNote(invoiceId, productId, note);
+    }
+
     public void removeInvoiceItem(int invoiceId, int productId) {
         service.removeInvoiceItem(invoiceId, productId);
     }

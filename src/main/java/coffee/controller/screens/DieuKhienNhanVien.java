@@ -55,6 +55,13 @@ public class DieuKhienNhanVien {
                 appController.deleteEmployee(parseInt(view.idField.getText())),
                 "Xóa nhân viên thành công"
         ));
+        view.clearButton.addActionListener(e -> {
+            if (session.getCurrentUser() == null || session.getCurrentUser().getVaiTro() != VaiTro.ADMIN) {
+                JOptionPane.showMessageDialog(view, "Chỉ ADMIN mới có quyền quản lý nhân viên");
+                return;
+            }
+            view.clearFormFields();
+        });
         view.table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && view.table.getSelectedRow() >= 0) {
                 int row = view.table.getSelectedRow();

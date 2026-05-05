@@ -101,6 +101,7 @@ public class KhoiTaoCoSoDuLieu {
                     )
                     """);
             st.execute("ALTER TABLE invoice_item ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'PENDING'");
+            st.execute("ALTER TABLE invoice_item ADD COLUMN IF NOT EXISTS note TEXT");
 
             st.execute("""
                     CREATE TABLE IF NOT EXISTS promotion (

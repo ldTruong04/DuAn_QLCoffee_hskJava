@@ -7,7 +7,9 @@ import coffee.model.SanPham;
 import coffee.util.*;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,10 +17,10 @@ import java.util.function.IntConsumer;
 
 public class ManHinhBan extends JPanel {
     public final JPanel tableGridPanel = new JPanel(new GridLayout(0, 4, ModernUITheme.PADDING_MD, ModernUITheme.PADDING_MD));
-    public final DefaultTableModel itemTableModel = new DefaultTableModel(new Object[]{"Tên món", "Số lượng", "Thành tiền"}, 0) {
+    public final DefaultTableModel itemTableModel = new DefaultTableModel(new Object[]{"Tên món", "Số lượng", "Thành tiền", "Ghi chú"}, 0) {
         @Override
         public boolean isCellEditable(int row, int column) {
-            return column == 1;
+            return column == 1 || column == 3;
         }
     };
     public final JTable itemTable = new JTable(itemTableModel);
@@ -122,6 +124,7 @@ public class ManHinhBan extends JPanel {
 
         itemTable.setFillsViewportHeight(true);
         ModernStyler.styleTable(itemTable);
+        itemTable.getColumnModel().getColumn(3).setCellRenderer(new NoteCellRenderer());
         JScrollPane itemScroll = new JScrollPane(itemTable);
         ModernStyler.styleScrollPane(itemScroll);
         detailContent.add(itemScroll, BorderLayout.CENTER);
@@ -276,7 +279,8 @@ public class ManHinhBan extends JPanel {
             itemTableModel.addRow(new Object[]{
                     item.getSanPham().getTen(),
                     item.getSoLuong(),
-                    String.format("%.0f", item.getThanhTien())
+                    String.format("%.0f", item.getThanhTien()),
+                    item.getGhiChu().isBlank() ? "" : item.getGhiChu()
             });
             total += item.getThanhTien();
         }
@@ -352,6 +356,25 @@ public class ManHinhBan extends JPanel {
             Object price = storeProductTableModel.getValueAt(row, 2);
             selectedStoreProductLabel.setText("Món đã chọn: " + name + " - " + price + " VND");
         });
+    }
+
+    private static class NoteCellRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus,
+                                                       int row, int column) {
+            JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            String text = value == null ? "" : value.toString().trim();
+            if (text.isBlank()) {
+                label.setText("📝 Không có");
+                label.setForeground(Color.GRAY);
+            } else {
+                label.setText("📝 " + text);
+                label.setForeground(ModernUITheme.TEXT_PRIMARY);
+            }
+            label.setHorizontalAlignment(SwingConstants.LEFT);
+            return label;
+        }
     }
 
     public void selectFirstProductIfNeeded() {

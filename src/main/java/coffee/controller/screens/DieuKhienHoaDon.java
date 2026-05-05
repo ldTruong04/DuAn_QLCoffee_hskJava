@@ -70,13 +70,22 @@ public class DieuKhienHoaDon {
         }));
 
         view.invoiceItemTableModel.addTableModelListener(e -> {
-            if (e.getType() != TableModelEvent.UPDATE || e.getColumn() != 1) {
+            if (e.getType() != TableModelEvent.UPDATE) {
                 return;
             }
-            runAction(() -> {
-                applyQuantityEditFromCell(e.getFirstRow());
-                onDataChanged.run();
-            });
+            int column = e.getColumn();
+            int row = e.getFirstRow();
+            if (column == 1) {
+                runAction(() -> {
+                    applyQuantityEditFromCell(e.getFirstRow());
+                    onDataChanged.run();
+                });
+            } else if (column == 3) {
+                runAction(() -> {
+                    applyNoteEditFromCell(row);
+                    onDataChanged.run();
+                });
+            }
         });
 
         view.payCashButton.addActionListener(e -> runAction(() -> {
@@ -280,6 +289,17 @@ public class DieuKhienHoaDon {
         } else {
             appController.updateInvoiceItemQuantity(currentInvoiceId, productId, targetQuantity);
         }
+    }
+
+    private void applyNoteEditFromCell(int row) {
+        ensureCurrentInvoice();
+        var item = view.getInvoiceItemAtRow(row);
+        if (item == null) {
+            return;
+        }
+        Object editedValue = view.invoiceItemTableModel.getValueAt(row, 3);
+        String note = editedValue == null ? "" : editedValue.toString().trim();
+        appController.updateInvoiceItemNote(currentInvoiceId, item.getSanPham().getMa(), note);
     }
 
     private int parseEditedQuantity(Object editedValue, int currentQuantity) {

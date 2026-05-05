@@ -8,6 +8,7 @@ import coffee.model.SanPham;
 import coffee.util.*;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -33,10 +34,10 @@ public class ManHinhHoaDon extends JPanel {
     public final JLabel discountValueLabel = new JLabel("0 VND");
     public final JLabel totalLabel = new JLabel("0 VND");
 
-    public final DefaultTableModel invoiceItemTableModel = new DefaultTableModel(new Object[]{"Tên món", "Số lượng", "Thành tiền"}, 0) {
+    public final DefaultTableModel invoiceItemTableModel = new DefaultTableModel(new Object[]{"Tên món", "Số lượng", "Thành tiền", "Ghi chú"}, 0) {
         @Override
         public boolean isCellEditable(int row, int column) {
-            return column == 1;
+            return column == 1 || column == 3;
         }
     };
     public final JTable invoiceItemTable = new JTable(invoiceItemTableModel);
@@ -228,8 +229,9 @@ formPanel.add(phonePanel, gbc);
         ModernStyler.styleTable(invoiceItemTable);
         JScrollPane itemScroll = new JScrollPane(invoiceItemTable);
         ModernStyler.styleScrollPane(itemScroll);
-        itemScroll.setPreferredSize(new Dimension(100, 180));
-        itemScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
+        itemScroll.setPreferredSize(new Dimension(100, 300));
+        // Remove maximum size to allow expansion
+        // itemScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
 
         JPanel tableWrap = new JPanel();
         tableWrap.setLayout(new BoxLayout(tableWrap, BoxLayout.Y_AXIS));
@@ -238,6 +240,7 @@ formPanel.add(phonePanel, gbc);
 
         itemPanel.add(tableWrap, BorderLayout.CENTER);
         QuantityCellEditor.installOn(invoiceItemTable, 1);
+        invoiceItemTable.getColumnModel().getColumn(3).setCellRenderer(new NoteCellRenderer());
 
         // === PAYMENT DASHBOARD - Compact vertical layout ===
         JPanel bottomBar = new JPanel();
@@ -251,7 +254,7 @@ formPanel.add(phonePanel, gbc);
         // --- Row 1: Summary (Tạm tính / Giảm giá / Thành tiền) + Khuyến mãi ---
         JPanel row1 = new JPanel(new BorderLayout(8, 0));
         row1.setOpaque(false);
-        row1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 190));
+        row1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
 
         // Summary (left)
         JPanel summaryPanel = new JPanel(new GridBagLayout());
@@ -317,12 +320,12 @@ formPanel.add(phonePanel, gbc);
 
         row1.add(promotionPanel, BorderLayout.CENTER);
         bottomBar.add(row1);
-        bottomBar.add(Box.createVerticalStrut(4));
+        bottomBar.add(Box.createVerticalStrut(2));
 
         // --- Row 2: Khách đưa + Tiền thối (single compact row) ---
         JPanel row2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 2));
         row2.setOpaque(false);
-        row2.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        row2.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
 
         JLabel cashLabel = new JLabel("Khách đưa:");
         cashLabel.setFont(new Font("SansSerif", Font.BOLD, 13));
@@ -352,7 +355,7 @@ formPanel.add(phonePanel, gbc);
         // --- Row 3: Bằng chữ ---
         JPanel row3 = new JPanel(new GridLayout(1, 2, 10, 0));
         row3.setOpaque(false);
-        row3.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+        row3.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
         cashWordsLabel.setFont(new Font("SansSerif", Font.ITALIC, 11));
         cashWordsLabel.setForeground(ModernUITheme.TEXT_SECONDARY);
         changeWordsLabel.setFont(new Font("SansSerif", Font.ITALIC, 11));
@@ -360,12 +363,12 @@ formPanel.add(phonePanel, gbc);
         row3.add(cashWordsLabel);
         row3.add(changeWordsLabel);
         bottomBar.add(row3);
-        bottomBar.add(Box.createVerticalStrut(4));
+        bottomBar.add(Box.createVerticalStrut(2));
 
         // --- Row 4: Export option + Action buttons ---
         JPanel row4 = new JPanel(new BorderLayout(8, 0));
         row4.setOpaque(false);
-        row4.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        row4.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
 
         JPanel exportWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 6));
         exportWrap.setOpaque(false);
@@ -532,7 +535,8 @@ formPanel.add(phonePanel, gbc);
             invoiceItemTableModel.addRow(new Object[]{
                     item.getSanPham().getTen(),
                     item.getSoLuong(),
-                    String.format("%.0f", item.getThanhTien())
+                    String.format("%.0f", item.getThanhTien()),
+                    item.getGhiChu().isBlank() ? "" : item.getGhiChu()
             });
             total += item.getThanhTien();
         }
@@ -938,5 +942,24 @@ formPanel.add(phonePanel, gbc);
         }
         clearPromotionButton.setToolTipText("Bỏ mã khuyến mãi");
         clearPromotionButton.setHorizontalAlignment(SwingConstants.CENTER);
+    }
+
+    private static class NoteCellRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus,
+                                                       int row, int column) {
+            JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            String text = value == null ? "" : value.toString().trim();
+            if (text.isBlank()) {
+                label.setText("📝 Không có");
+                label.setForeground(Color.GRAY);
+            } else {
+                label.setText("📝 " + text);
+                label.setForeground(ModernUITheme.TEXT_PRIMARY);
+            }
+            label.setHorizontalAlignment(SwingConstants.LEFT);
+            return label;
+        }
     }
 }

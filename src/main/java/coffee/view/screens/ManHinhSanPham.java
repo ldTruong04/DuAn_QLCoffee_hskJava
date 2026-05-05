@@ -24,11 +24,12 @@ public class ManHinhSanPham extends JPanel {
     public final JButton addButton = new ModernButton("Thêm", ModernUITheme.SUCCESS_COLOR, ModernUITheme.TEXT_PRIMARY);
     public final JButton updateButton = new ModernButton("Sửa", ModernUITheme.INFO_COLOR, ModernUITheme.TEXT_PRIMARY);
     public final JButton deleteButton = new ModernButton("Xóa", ModernUITheme.DANGER_COLOR, ModernUITheme.TEXT_PRIMARY);
+    public final JButton clearButton = new ModernButton("Xóa trắng", ModernUITheme.WARNING_COLOR, ModernUITheme.TEXT_PRIMARY);
 
     public final JTabbedPane tabbedPane = new JTabbedPane();
     
     // Kitchen Order components
-    public final DefaultTableModel kitchenOrderTableModel = new DefaultTableModel(new Object[]{"Hóa đơn", "Thời gian", "Bàn", "Tên món", "SL", "Trạng thái"}, 0) {
+    public final DefaultTableModel kitchenOrderTableModel = new DefaultTableModel(new Object[]{"Hóa đơn", "Thời gian", "Bàn", "Tên món", "SL", "Trạng thái", "Ghi chú"}, 0) {
         @Override
         public boolean isCellEditable(int row, int column) {
             return false;
@@ -223,9 +224,11 @@ private JPanel createInputGroup(String labelText, JTextField field) {
         addButton.setPreferredSize(new Dimension(110, 38));
         updateButton.setPreferredSize(new Dimension(110, 38));
         deleteButton.setPreferredSize(new Dimension(110, 38));
+        clearButton.setPreferredSize(new Dimension(110, 38));
         footer.add(addButton);
         footer.add(updateButton);
         footer.add(deleteButton);
+        footer.add(clearButton);
         return footer;
     }
 
@@ -271,6 +274,16 @@ private JPanel createInputGroup(String labelText, JTextField field) {
         Image scaled = icon.getImage().getScaledInstance(140, 140, Image.SCALE_SMOOTH);
         imagePreviewLabel.setIcon(new ImageIcon(scaled));
         imagePreviewLabel.setText(file.getName());
+    }
+
+    public void clearFormFields() {
+        idField.setText("");
+        nameField.setText("");
+        categoryField.setText("");
+        priceField.setText("");
+        descriptionArea.setText("");
+        imagePathField.setText("");
+        capNhatXemTruocAnh(null);
     }
 
     public void capNhatTuSanPham(SanPham sanPham) {

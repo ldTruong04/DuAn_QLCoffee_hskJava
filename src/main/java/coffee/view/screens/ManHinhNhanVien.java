@@ -33,6 +33,7 @@ public class ManHinhNhanVien extends JPanel {
     public final JButton addButton = new ModernButton("Thêm", ModernUITheme.SUCCESS_COLOR, ModernUITheme.TEXT_PRIMARY);
     public final JButton updateButton = new ModernButton("Sửa", ModernUITheme.INFO_COLOR, ModernUITheme.TEXT_PRIMARY);
     public final JButton deleteButton = new ModernButton("Xóa", ModernUITheme.DANGER_COLOR, ModernUITheme.TEXT_PRIMARY);
+    public final JButton clearButton = new ModernButton("Xóa trắng", ModernUITheme.WARNING_COLOR, ModernUITheme.TEXT_PRIMARY);
 
     public ManHinhNhanVien() {
         setLayout(new BorderLayout(0, 20));
@@ -120,9 +121,11 @@ public class ManHinhNhanVien extends JPanel {
         addButton.setPreferredSize(new Dimension(110, 38));
         updateButton.setPreferredSize(new Dimension(110, 38));
         deleteButton.setPreferredSize(new Dimension(110, 38));
+        clearButton.setPreferredSize(new Dimension(110, 38));
         footer.add(addButton);
         footer.add(updateButton);
         footer.add(deleteButton);
+        footer.add(clearButton);
         card.add(footer, BorderLayout.SOUTH);
 
         return card;
@@ -218,5 +221,19 @@ public class ManHinhNhanVien extends JPanel {
         Image scaled = icon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
         avatarPreviewLabel.setIcon(new ImageIcon(scaled));
         avatarPreviewLabel.setText("");
+    }
+
+    public void clearFormFields() {
+        idField.setText("");
+        fullNameField.setText("");
+        emailField.setText("");
+        birthYearField.setText("");
+        salaryField.setText("");
+        usernameField.setText("");
+        passwordField.setText("");
+        avatarPathField.setText("");
+        otherRadio.setSelected(true);
+        roleBox.setSelectedIndex(0);
+        capNhatXemTruocAnh(null);
     }
 }

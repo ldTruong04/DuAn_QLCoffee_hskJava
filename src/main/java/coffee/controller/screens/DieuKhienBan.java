@@ -40,10 +40,16 @@ public class DieuKhienBan {
         }));
 
         view.itemTableModel.addTableModelListener(e -> {
-            if (e.getType() != TableModelEvent.UPDATE || e.getColumn() != 1) {
+            if (e.getType() != TableModelEvent.UPDATE) {
                 return;
             }
-            runAction(() -> applyQuantityEditFromCell(e.getFirstRow()));
+            int column = e.getColumn();
+            int row = e.getFirstRow();
+            if (column == 1) {
+                runAction(() -> applyQuantityEditFromCell(row));
+            } else if (column == 3) {
+                runAction(() -> applyNoteEditFromCell(row));
+            }
         });
 
         view.reserveButton.addActionListener(e -> runAction(() -> {
@@ -179,6 +185,17 @@ public class DieuKhienBan {
             return currentQuantity + delta;
         }
         return Integer.parseInt(text);
+    }
+
+    private void applyNoteEditFromCell(int row) {
+        ensureEditableInvoice();
+        var item = view.getOrderItemAtRow(row);
+        if (item == null) {
+            return;
+        }
+        Object editedValue = view.itemTableModel.getValueAt(row, 3);
+        String note = editedValue == null ? "" : editedValue.toString().trim();
+        appController.updateInvoiceItemNote(currentInvoiceId, item.getSanPham().getMa(), note);
     }
 
 }

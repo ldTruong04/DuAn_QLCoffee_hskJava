@@ -218,6 +218,14 @@ public class DichVuCafe {
         invoiceRepository.updateInvoiceItemQuantity(invoiceId, productId, quantity);
     }
 
+    public void updateInvoiceItemNote(int invoiceId, int productId, String note) {
+        HoaDon invoice = invoiceRepository.findDetailedById(invoiceId);
+        if (invoice.isDaThanhToan()) {
+            throw new IllegalStateException("Không thể sửa ghi chú của hóa đơn đã thanh toán");
+        }
+        invoiceRepository.updateInvoiceItemNote(invoiceId, productId, note);
+    }
+
     public void removeInvoiceItem(int invoiceId, int productId) {
         HoaDon invoice = invoiceRepository.findDetailedById(invoiceId);
         if (invoice.isDaThanhToan()) {

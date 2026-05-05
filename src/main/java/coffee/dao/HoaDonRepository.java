@@ -47,10 +47,12 @@ public class HoaDonRepository {
 
     public void upsertInvoiceItem(int invoiceId, int productId, int quantity, double unitPrice) {
         String sql = """
-                INSERT INTO invoice_item(invoice_id, product_id, quantity, unit_price, status)
-                VALUES (?, ?, ?, ?, 'PENDING')
+                INSERT INTO invoice_item(invoice_id, product_id, quantity, unit_price, status, note)
+                VALUES (?, ?, ?, ?, 'PENDING', NULL)
                 ON CONFLICT (invoice_id, product_id)
-                DO UPDATE SET quantity = invoice_item.quantity + EXCLUDED.quantity, status = 'PENDING'
+                DO UPDATE SET quantity = invoice_item.quantity + EXCLUDED.quantity,
+                             status = 'PENDING',
+                             note = COALESCE(invoice_item.note, EXCLUDED.note)
                 """;
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -138,7 +140,7 @@ public class HoaDonRepository {
                        t.id table_id, t.name table_name, t.occupied,
                       e.id employee_id, e.ho_ten employee_name, e.role, e.username, e.password,
                   p.id product_id, p.name product_name, p.category, p.price, p.description, p.image_path,
-                       ii.quantity, ii.unit_price, ii.status
+                       ii.quantity, ii.unit_price, ii.status, ii.note
                 FROM invoice i
                 JOIN cafe_table t ON t.id = i.table_id
                 JOIN employee e ON e.id = i.employee_id
@@ -195,7 +197,7 @@ public class HoaDonRepository {
                             rs.getString("description"),
                             rs.getString("image_path")
                     );
-                    current.getDanhSachMon().add(new ChiTietHoaDon(product, rs.getInt("quantity"), rs.getString("status")));
+                    current.getDanhSachMon().add(new ChiTietHoaDon(product, rs.getInt("quantity"), rs.getString("status"), rs.getString("note")));
                 }
             }
             return invoices;
@@ -290,9 +292,26 @@ public class HoaDonRepository {
         }
     }
 
+    public void updateInvoiceItemNote(int invoiceId, int productId, String note) {
+        String sql = "UPDATE invoice_item SET note=? WHERE invoice_id=? AND product_id=?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, note == null ? "" : note);
+            ps.setInt(2, invoiceId);
+            ps.setInt(3, productId);
+            if (ps.executeUpdate() == 0) {
+                throw new IllegalArgumentException("Món không tồn tại trong hóa đơn");
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public List<coffee.model.MonOrderBep> getPendingOrderItems() {
         String sql = """
-                SELECT ii.invoice_id, ii.product_id, ii.quantity, ii.status,
+                SELECT ii.invoice_id, ii.product_id, ii.quantity, ii.status, ii.note,
                        p.name AS product_name, p.price AS unit_price,
                        t.name AS table_name, i.created_at
                 FROM invoice_item ii
@@ -315,7 +334,8 @@ public class HoaDonRepository {
                         rs.getDouble("unit_price"),
                         rs.getString("table_name"),
                         rs.getTimestamp("created_at").toLocalDateTime(),
-                        rs.getString("status")
+                        rs.getString("status"),
+                        rs.getString("note")
                 ));
             }
         } catch (Exception e) {

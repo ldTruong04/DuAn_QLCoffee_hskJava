@@ -91,7 +91,7 @@ public class UngDungQuanLyCafe extends JFrame {
                 new HoaDonRepository(),
                 new KhuyenMaiRepository()
         ));
-        this.productController = new DieuKhienSanPham(controller, productView);
+        this.productController = new DieuKhienSanPham(controller, session, productView);
         this.tableController = new DieuKhienBan(controller, session, tableView);
         this.employeeController = new DieuKhienNhanVien(controller, session, employeeView);
         this.reportController = new DieuKhienThongKe(controller, reportView);

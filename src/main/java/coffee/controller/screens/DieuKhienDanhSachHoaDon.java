@@ -3,6 +3,7 @@ package coffee.controller.screens;
 import coffee.controller.DieuKhienUngDung;
 import coffee.model.ChiTietHoaDon;
 import coffee.model.HoaDon;
+import coffee.util.ExcelUtil;
 import coffee.view.screens.ManHinhDanhSachHoaDon;
 
 import java.time.format.DateTimeFormatter;
@@ -23,6 +24,10 @@ public class DieuKhienDanhSachHoaDon {
             if (!e.getValueIsAdjusting()) {
                 showSelectedInvoiceDetails();
             }
+        });
+        
+        view.exportExcelButton.addActionListener(e -> {
+            ExcelUtil.exportInvoicesToExcel(appController.getInvoices());
         });
     }
 
