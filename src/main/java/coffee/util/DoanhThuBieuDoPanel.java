@@ -14,8 +14,8 @@ public class DoanhThuBieuDoPanel extends JPanel {
     private String lowerLegend = "Tiền mặt";
     private String upperLegend = "Chuyển khoản";
     private final Color singleColor = new Color(46, 170, 103);
-    private final Color lowerColor = new Color(248, 180, 37);
-    private final Color upperColor = new Color(54, 144, 255);
+    private final Color lowerColor = new Color(255,0,255);
+    private final Color upperColor = new Color(231, 76, 60);
 
     public DoanhThuBieuDoPanel(String title) {
         this.title = title;

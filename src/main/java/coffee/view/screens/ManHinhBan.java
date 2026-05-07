@@ -205,22 +205,20 @@ public class ManHinhBan extends JPanel {
         for (BanCafe table : sortedTables) {
             boolean selected = selectedTableId != null && selectedTableId == table.getMa();
             String statusText = table.isKhongSuDung() ? "Bảo trì" : (table.isDangSuDung() ? "Đang dùng" : (table.isDaDat() ? "Đã đặt" : "Trống"));
-            Color bgColor = colorForTable(table, selected);
-            Color fgColor = bgColor.equals(Color.WHITE) ? ModernUITheme.PRIMARY_DARK : Color.WHITE;
             
-            ModernButton button = new ModernButton(
-                    table.getTen() + "\n[" + statusText + "]",
-                    bgColor,
-                    fgColor
-            );
+            JButton button = new JButton("<html><center>" + table.getTen() + "<br>[" + statusText + "]</center></html>");
             button.setPreferredSize(new Dimension(80, 80));
-            button.setBaseColor(bgColor);
+            if (selected) {
+                button.setFont(button.getFont().deriveFont(Font.BOLD));
+            } else {
+                button.setFont(button.getFont().deriveFont(Font.PLAIN));
+            }
             button.setToolTipText("Nhấn để xem chi tiết bàn " + table.getTen());
             button.addActionListener(e -> onSelect.accept(table.getMa()));
             tableGridPanel.add(button);
         }
         
-        ModernButton addButton = new ModernButton("+", ModernUITheme.SUCCESS_COLOR, Color.WHITE);
+        JButton addButton = new JButton("+");
         addButton.setPreferredSize(new Dimension(80, 80));
         addButton.setFont(new Font("Segoe UI", Font.BOLD, 24));
         addButton.addActionListener(e -> {
@@ -326,21 +324,7 @@ public class ManHinhBan extends JPanel {
         return currentOrderItems.get(row);
     }
 
-    private Color colorForTable(BanCafe table, boolean selected) {
-        if (table.isKhongSuDung()) {
-            return new Color(149, 165, 166); // Xám
-        }
-        if (table.isDangSuDung()) {
-            return ModernUITheme.DANGER_COLOR;
-        }
-        if (table.isDaDat()) {
-            return new Color(241, 196, 15);
-        }
-        if (selected) {
-            return Color.WHITE;
-        }
-        return ModernUITheme.SUCCESS_COLOR;
-    }
+
 
     public void bindStoreProductSelection() {
         storeProductTable.getSelectionModel().addListSelectionListener(e -> {

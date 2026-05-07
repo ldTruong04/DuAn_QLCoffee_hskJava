@@ -13,6 +13,31 @@ import java.time.format.DateTimeFormatter;
 
 public class PDFUtil {
 
+    public static Font getVietnameseFont(int size, int style) {
+        try {
+            String os = System.getProperty("os.name").toLowerCase();
+            String fontPath = "";
+            if (os.contains("win")) {
+                fontPath = "C:\\Windows\\Fonts\\arial.ttf";
+            } else if (os.contains("mac")) {
+                File f1 = new File("/System/Library/Fonts/Supplemental/Arial.ttf");
+                File f2 = new File("/Library/Fonts/Arial.ttf");
+                if (f1.exists()) fontPath = f1.getAbsolutePath();
+                else if (f2.exists()) fontPath = f2.getAbsolutePath();
+            } else {
+                File f1 = new File("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+                if (f1.exists()) fontPath = f1.getAbsolutePath();
+            }
+            if (fontPath.isEmpty() || !new File(fontPath).exists()) {
+                return new Font(Font.FontFamily.HELVETICA, size, style);
+            }
+            BaseFont bf = BaseFont.createFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            return new Font(bf, size, style);
+        } catch (Exception e) {
+            return new Font(Font.FontFamily.HELVETICA, size, style);
+        }
+    }
+
     public static void inDonHang(MonOrderBep item) {
         try {
             // Create directory
@@ -24,7 +49,7 @@ public class PDFUtil {
 
             // Generate filename
             String timestamp = java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-            String safeBan = item.getTenBan().replaceAll("[^a-zA-Z0-9_-]", "");
+            String safeBan = item.getTenBan().replaceAll("[\\\\/:*?\"<>|]", "_");
             String filename = "DonHang_" + safeBan + "_" + timestamp + ".pdf";
             File pdfFile = new File(dir, filename);
 
@@ -32,14 +57,10 @@ public class PDFUtil {
             PdfWriter.getInstance(document, new FileOutputStream(pdfFile));
             document.open();
 
-            // Note: Since iText 5 default font doesn't support Vietnamese well without a TTF font,
-            // we use the default Helvetica. For a real app, you should load a Unicode font (e.g., Arial.ttf).
-            // Here we try to use default if TTF is not provided, but Vietnamese characters might be lost.
-            // Ideally load a font from OS, but to keep it simple and portable we use default for now.
-            Font titleFont = new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD);
-            Font normalFont = new Font(Font.FontFamily.HELVETICA, 12, Font.NORMAL);
+            Font titleFont = getVietnameseFont(18, Font.BOLD);
+            Font normalFont = getVietnameseFont(12, Font.NORMAL);
 
-            Paragraph title = new Paragraph("PHIEU CHE BIEN - " + item.getTenBan(), titleFont);
+            Paragraph title = new Paragraph("PHIẾU CHẾ BIẾN - " + item.getTenBan(), titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             title.setSpacingAfter(20);
             document.add(title);
@@ -48,13 +69,13 @@ public class PDFUtil {
             table.setWidthPercentage(100);
             table.setWidths(new float[]{1, 2});
 
-            addTableRow(table, "Ban:", item.getTenBan(), normalFont);
-            addTableRow(table, "Ten mon:", removeAccent(item.getTenMon()), normalFont);
-            addTableRow(table, "So luong:", String.valueOf(item.getSoLuong()), normalFont);
-            addTableRow(table, "Gia:", String.format("%.0f VND", item.getGia()), normalFont);
+            addTableRow(table, "Bàn:", item.getTenBan(), normalFont);
+            addTableRow(table, "Tên món:", item.getTenMon(), normalFont);
+            addTableRow(table, "Số lượng:", String.valueOf(item.getSoLuong()), normalFont);
+            addTableRow(table, "Giá:", String.format("%.0f VND", item.getGia()), normalFont);
             
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-            addTableRow(table, "Thoi gian dat:", item.getThoiGian().format(formatter), normalFont);
+            addTableRow(table, "Thời gian đặt:", item.getThoiGian().format(formatter), normalFont);
 
             document.add(table);
             document.close();
@@ -92,8 +113,8 @@ public class PDFUtil {
             PdfWriter.getInstance(document, new FileOutputStream(pdfFile));
             document.open();
 
-            Font titleFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD);
-            Font normalFont = new Font(Font.FontFamily.HELVETICA, 12, Font.NORMAL);
+            Font titleFont = getVietnameseFont(16, Font.BOLD);
+            Font normalFont = getVietnameseFont(12, Font.NORMAL);
             document.add(new Paragraph("HÓA ĐƠN", titleFont));
             document.add(new Paragraph(" ", normalFont));
 
@@ -109,9 +130,4 @@ public class PDFUtil {
         }
     }
 
-    public static String removeAccent(String s) {
-        String temp = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD);
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
-        return pattern.matcher(temp).replaceAll("").replace('đ','d').replace('Đ','D');
-    }
 }

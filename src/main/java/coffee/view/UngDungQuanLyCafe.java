@@ -196,15 +196,15 @@ public class UngDungQuanLyCafe extends JFrame {
 
     private JPanel createSidebar() {
         JPanel sidebar = new JPanel();
-        sidebar.setBackground(ModernUITheme.BG_SECONDARY);
-        sidebar.setBorder(BorderFactory.createEmptyBorder(ModernUITheme.PADDING_LG, ModernUITheme.PADDING_LG,
-                ModernUITheme.PADDING_LG, ModernUITheme.PADDING_LG));
         sidebar.setLayout(new GridLayout(0, 1, 0, 0));
         sidebar.setPreferredSize(new Dimension(210, 0));
 
         JButton[] navButtons = {sanPhamButton, banButton, thanhToanButton, hoaDonButton, khuyenMaiButton, nhanVienButton, thongKeButton, aiButton, dangXuatButton};
         for (JButton btn : navButtons) {
-            btn.setBorder(BorderFactory.createLineBorder(Color.GRAY)); // Make buttons square, no rounded corners
+            btn.setBorderPainted(false);
+            btn.setFocusPainted(false);
+            btn.setOpaque(true);
+            btn.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         }
 
         sanPhamButton.addActionListener(e -> showScreen("Sản phẩm", "SAN_PHAM", sanPhamButton));
